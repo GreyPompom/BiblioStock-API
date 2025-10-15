@@ -56,9 +56,4 @@ Thumbs.db
 *.orig
 *.rej
 *~
-
 # =========================
-# 📦 Node (caso tenha front junto)
-# =========================
-node_modules/
-dist/
