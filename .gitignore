@@ -47,8 +47,8 @@ application.yml
 application-*.properties
 # Mantém o arquivo base vazio, se quiser:
 application.yml
-src/main/resources/application.yml
-
+/src/main/resources/application.yml
+/src/main/resources/application-*.properties
 
 # =========================
 # 🧰 SO e temporários
