@@ -43,10 +43,12 @@ replay_pid*
 # 🔒 Credenciais / Configurações locais
 # =========================
 *.env
-application-*.yml
+application.yml
 application-*.properties
 # Mantém o arquivo base vazio, se quiser:
-!application.yml
+application.yml
+src/main/resources/application.yml
+
 
 # =========================
 # 🧰 SO e temporários
