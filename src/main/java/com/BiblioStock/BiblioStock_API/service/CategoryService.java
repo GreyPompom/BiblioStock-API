@@ -4,10 +4,13 @@ import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.BiblioStock.BiblioStock_API.dto.CategoryDTO;
+import com.BiblioStock.BiblioStock_API.dto.*;
 import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
+import com.BiblioStock.BiblioStock_API.exception.*;
+
 
 @Service
 public class CategoryService {
@@ -17,45 +20,58 @@ public class CategoryService {
         this.repository = repository;
     }
 
-    public List<CategoryDTO> findAll() {
-        return repository.findAll().stream().map(CategoryDTO::new).collect(Collectors.toList());
+    public List<CategoryResponseDTO> findAll() {
+        return repository.findAll().stream()
+                .map(CategoryResponseDTO::fromEntity)
+                .toList();
     }
     
-     public CategoryDTO findById(Long id) {
+     public CategoryResponseDTO findById(Long id) {
         Category category = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada com id " + id));
-        return new CategoryDTO(category);
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id " + id));
+        return CategoryResponseDTO.fromEntity(category);
     }
 
-    public CategoryDTO create(CategoryDTO dto) {
-        if (repository.existsByName(dto.getName())) {
-            throw new RuntimeException("Já existe uma categoria com este nome.");
+    @Transactional
+    public CategoryResponseDTO create(CategoryRequestDTO dto) {
+        if (repository.existsByNameIgnoreCase(dto.name())) {
+            throw new BusinessException("Já existe uma categoria com esse nome.");
         }
 
-        Category category = new Category();
-        category.setName(dto.getName());
-        category.setSize(dto.getSize());
-        category.setPackagingType(dto.getPackagingType());
-        category.setDefaultAdjustmentPercent(dto.getDefaultAdjustmentPercent());
+        Category category = Category.builder()
+                .name(dto.name())
+                .size(dto.size())
+                .packagingType(dto.packagingType())
+                .defaultAdjustmentPercent(dto.defaultAdjustmentPercent())
+                .build();
 
-        return new CategoryDTO(repository.save(category));
+        return CategoryResponseDTO.fromEntity(repository.save(category));
     }
 
-    public CategoryDTO update(Long id, CategoryDTO dto) {
+    @Transactional
+    public CategoryResponseDTO update(Long id, CategoryRequestDTO dto) {
         Category category = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada com id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id " + id));
 
-        category.setName(dto.getName());
-        category.setSize(dto.getSize());
-        category.setPackagingType(dto.getPackagingType());
-        category.setDefaultAdjustmentPercent(dto.getDefaultAdjustmentPercent());
+        category.setName(dto.name());
+        category.setSize(dto.size());
+        category.setPackagingType(dto.packagingType());
+        category.setDefaultAdjustmentPercent(dto.defaultAdjustmentPercent());
 
-        return new CategoryDTO(repository.save(category));
+        return CategoryResponseDTO.fromEntity(repository.save(category));
     }
+
+    @Transactional
     public void delete(Long id) {
         Category category = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada com id " + id));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id " + id));
+//  // Simulação de regra: impedir exclusão se tiver produtos
+//         // Exemplo: if (productRepository.existsByCategory(category)) { throw ... }
+
+//         boolean hasProducts = false; // Aqui seria a checagem real
+//         if (hasProducts) {
+//             throw new BusinessException("Não é possível excluir uma categoria vinculada a produtos.");
+//         }
         try {
             repository.delete(category);
         } catch (DataIntegrityViolationException e) {
