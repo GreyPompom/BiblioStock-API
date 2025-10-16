@@ -1,11 +1,13 @@
 package com.BiblioStock.BiblioStock_API.service;
-import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
-import com.BiblioStock.BiblioStock_API.dto.CategoryDTO;
-import com.BiblioStock.BiblioStock_API.model.Category;
-import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Optional;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+
+import com.BiblioStock.BiblioStock_API.dto.CategoryDTO;
+import com.BiblioStock.BiblioStock_API.model.Category;
+import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
 
 @Service
 public class CategoryService {
@@ -53,6 +55,11 @@ public class CategoryService {
     public void delete(Long id) {
         Category category = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoria não encontrada com id " + id));
-        repository.delete(category);
+        
+        try {
+            repository.delete(category);
+        } catch (DataIntegrityViolationException e) {
+            throw new DataIntegrityViolationException("Não é permitido excluir a categoria pois há produtos vinculados.");
+        }
     }
 }

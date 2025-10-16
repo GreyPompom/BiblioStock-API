@@ -1,12 +1,13 @@
 package com.BiblioStock.BiblioStock_API.model;
 
-import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 
-import lombok.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 
 @Table(name = "categories")
@@ -26,7 +27,7 @@ public class Category {
     @Column(name = "packaging_type")
     private String packagingType;
 
-    @Column(name = "default_adjustment_percent", precision = 5, scale = 2)
+    @Column(name = "default_adjustment_percent")
     private Double defaultAdjustmentPercent = 0.0;
 
     @Column(name = "created_at")

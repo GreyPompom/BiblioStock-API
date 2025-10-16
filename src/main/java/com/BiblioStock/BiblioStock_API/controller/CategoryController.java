@@ -3,6 +3,8 @@ package com.BiblioStock.BiblioStock_API.controller;
 import com.BiblioStock.BiblioStock_API.dto.CategoryDTO;
 import com.BiblioStock.BiblioStock_API.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +40,18 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.ok("Categoria excluída com sucesso");
+        try {
+            service.delete(id);
+            return ResponseEntity.ok("Categoria excluída com sucesso");
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body("Não é permitido excluir a categoria pois há produtos vinculados a ela.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro inesperado ao excluir categoria: " + e.getMessage());
+        }
     }
 }
