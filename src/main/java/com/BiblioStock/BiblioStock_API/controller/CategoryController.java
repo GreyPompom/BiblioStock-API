@@ -1,40 +1,44 @@
 package com.BiblioStock.BiblioStock_API.controller;
 
-import com.BiblioStock.BiblioStock_API.dto.CategoryDTO;
-import com.BiblioStock.BiblioStock_API.service.CategoryService;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.BiblioStock.BiblioStock_API.dto.*;
+import com.BiblioStock.BiblioStock_API.service.CategoryService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(origins = "*")
 public class CategoryController {
 
-    @Autowired
-    private CategoryService service;
+    private final CategoryService service;
+    
+    public CategoryController(CategoryService service) {
+        this.service = service;
+    }
 
     @GetMapping
-    public List<CategoryDTO> getAll() {
-        return service.findAll();
+    public ResponseEntity<List<CategoryResponseDTO>> getAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<CategoryResponseDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDTO> create(@RequestBody CategoryDTO dto) {
+    public ResponseEntity<CategoryResponseDTO> create(@Valid @RequestBody CategoryRequestDTO dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @RequestBody CategoryDTO dto) {
+    public ResponseEntity<CategoryResponseDTO> update(@PathVariable Long id,@Valid @RequestBody CategoryRequestDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
