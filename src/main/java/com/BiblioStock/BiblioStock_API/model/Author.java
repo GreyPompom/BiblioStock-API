@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import java.time.LocalDate;
 
 @Table(name = "authors")
 @Entity
@@ -16,8 +16,8 @@ public class Author {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="full_name" nullable = false)
-    private String full_name;
+    @Column(name= "full_name", nullable = false)
+    private String fullName;
 
     private String nationality;
 
