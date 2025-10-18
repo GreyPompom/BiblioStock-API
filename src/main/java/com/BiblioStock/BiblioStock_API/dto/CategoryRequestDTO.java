@@ -6,7 +6,7 @@ public record CategoryRequestDTO(
         @NotBlank(message = "O nome da categoria é obrigatório")
         String name,
 
-        @NotBlank(message = "O tamanho é obrigatório")
+        @NotBlank(message = "O tamanho é obrigatório - Pequeno, Médio, Grande")
         String size,
 
         @NotBlank(message = "O tipo de embalagem é obrigatório")

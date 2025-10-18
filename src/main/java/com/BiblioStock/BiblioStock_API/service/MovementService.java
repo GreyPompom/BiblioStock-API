@@ -15,6 +15,7 @@ import com.BiblioStock.BiblioStock_API.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -67,9 +68,11 @@ public class MovementService {
 
         Movement movement = Movement.builder()
                 .product(product)
+                .productNameSnapshot(product.getName())
                 .quantity(dto.quantity())
                 .movementType(dto.movementType())
                 .note(dto.note())
+                .movementDate(LocalDateTime.now())
                 .user(user)
                 .build();
 
