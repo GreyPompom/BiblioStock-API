@@ -1,56 +1,142 @@
-// package com.BiblioStock.BiblioStock_API.service;
+package com.BiblioStock.BiblioStock_API.service;
 
-// import com.BiblioStock.BiblioStock_API.model.Product;
-// import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
-// import org.springframework.stereotype.Service;
+import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
+import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
+import com.BiblioStock.BiblioStock_API.exception.BusinessException;
+import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
+import com.BiblioStock.BiblioStock_API.model.Author;
+import com.BiblioStock.BiblioStock_API.model.Category;
+import com.BiblioStock.BiblioStock_API.model.Product;
+import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
+import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
+import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-// import java.util.List;
-// import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-// @Service
-// public class ProductService {
+@Service
+public class ProductService {
 
-//     private final ProductRepository repository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final AuthorRepository authorRepository;
 
-//     public ProductService(ProductRepository repository) {
-//         this.repository = repository;
-//     }
+    public ProductService(ProductRepository productRepository,
+                          CategoryRepository categoryRepository,
+                          AuthorRepository authorRepository) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.authorRepository = authorRepository;
+    }
 
-//     public List<Product> getAllProducts() {
-//         return repository.findAll();
-//     }
+    public List<ProductResponseDTO> findAll() {
+        return productRepository.findAll()
+                .stream()
+                .map(ProductResponseDTO::fromEntity)
+                .toList();
+    }
 
-//     public Optional<Product> getProductById(Long id) {
-//         return repository.findById(id);
-//     }
+    public ProductResponseDTO findById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id " + id));
+        return ProductResponseDTO.fromEntity(product);
+    }
 
-//     public Product createProduct(Product product) {
-//         product.setCreatedAt(java.time.LocalDateTime.now());
-//         return repository.save(product);
-//     }
+    @Transactional
+    public ProductResponseDTO create(ProductRequestDTO dto) {
+        validateBusinessRules(dto, null);
 
-//     public Product updateProduct(Long id, Product productDetails) {
-//         Product product = repository.findById(id)
-//                 .orElseThrow(() -> new RuntimeException("Produto não encontrado com id " + id));
+        Category category = categoryRepository.findById(dto.categoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 
-//         product.setName(productDetails.getName());
-//         product.setIsbn(productDetails.getIsbn());
-//         product.setPrice(productDetails.getPrice());
-//         product.setStockQty(productDetails.getStockQty());
-//         product.setMinQty(productDetails.getMinQty());
-//         product.setMaxQty(productDetails.getMaxQty());
-//         product.setUnit(productDetails.getUnit());
-//         product.setPublisher(productDetails.getPublisher());
-//         product.setCategory(productDetails.getCategory());
+        Set<Author> authors = new HashSet<>();
+        if (dto.authorIds() != null && !dto.authorIds().isEmpty()) {
+            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
+        }
 
-//         return repository.save(product);
-//     }
+        Product product = Product.builder()
+                .name(dto.name())
+                .productType(dto.productType())
+                .price(dto.price())
+                .unit(dto.unit())
+                .stockQty(dto.stockQty())
+                .minQty(dto.minQty())
+                .maxQty(dto.maxQty())
+                .publisher(dto.publisher())
+                .isbn(dto.isbn())
+                .category(category)
+                .authors(authors)
+                .build();
 
-//     public void deleteProduct(Long id) {
-//         Product product = repository.findById(id)
-//                 .orElseThrow(() -> new RuntimeException("Produto não encontrado com id " + id));
+        return ProductResponseDTO.fromEntity(productRepository.save(product));
+    }
 
-//         // Aqui você poderia verificar se existem movimentações vinculadas
-//         repository.delete(product);
-//     }
-// }
+    @Transactional
+    public ProductResponseDTO update(Long id, ProductRequestDTO dto) {
+        Product existing = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id " + id));
+
+        validateBusinessRules(dto, id);
+
+        Category category = categoryRepository.findById(dto.categoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
+
+        Set<Author> authors = new HashSet<>();
+        if (dto.authorIds() != null && !dto.authorIds().isEmpty()) {
+            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
+        }
+
+        existing.setName(dto.name());
+        existing.setProductType(dto.productType());
+        existing.setPrice(dto.price());
+        existing.setUnit(dto.unit());
+        existing.setStockQty(dto.stockQty());
+        existing.setMinQty(dto.minQty());
+        existing.setMaxQty(dto.maxQty());
+        existing.setPublisher(dto.publisher());
+        existing.setIsbn(dto.isbn());
+        existing.setCategory(category);
+        existing.setAuthors(authors);
+
+        return ProductResponseDTO.fromEntity(productRepository.save(existing));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id " + id));
+        productRepository.delete(product);
+    }
+
+    private void validateBusinessRules(ProductRequestDTO dto, Long productId) {
+        // RN006 - ISBN duplicado
+        if (dto.isbn() != null && productRepository.existsByIsbn(dto.isbn())) {
+            if (productId == null) throw new BusinessException("Já existe um produto com o mesmo ISBN.");
+        }
+        
+         //  - SKU duplicado
+        if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
+            if (productId == null) throw new BusinessException("Já existe um produto com o mesmo sku.");
+        }
+
+        // RN004 - Quantidade mínima <= máxima
+        if (dto.maxQty() != null && dto.minQty().compareTo(dto.maxQty()) > 0) {
+            throw new BusinessException("A quantidade mínima não pode ser maior que a máxima.");
+        }
+
+        // RN002 - Livro deve ter autor
+        if (dto.productType().equalsIgnoreCase("Livro") &&
+                (dto.authorIds() == null || dto.authorIds().isEmpty())) {
+            throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
+        }
+
+        // RN005 - Estoque não pode ser negativo
+        if (dto.stockQty().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("O estoque não pode ser negativo.");
+        }
+    }
+}

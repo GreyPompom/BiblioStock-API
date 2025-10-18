@@ -1,7 +1,10 @@
 package com.BiblioStock.BiblioStock_API.controller;
 
-import com.BiblioStock.BiblioStock_API.model.Product;
-import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
+import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
+import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
+import com.BiblioStock.BiblioStock_API.service.ProductService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,19 +14,36 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class ProductController {
 
-    private final ProductRepository repository;
+    private final ProductService service;
 
-    public ProductController(ProductRepository repository) {
-        this.repository = repository;
+    public ProductController(ProductService service) {
+        this.service = service;
     }
 
     @GetMapping
-    public List<Product> findAll() {
-        return repository.findAll();
+    public ResponseEntity<List<ProductResponseDTO>> getAll() {
+        return ResponseEntity.ok(service.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    public Product create(@RequestBody Product product) {
-        return repository.save(product);
+    public ResponseEntity<ProductResponseDTO> create(@Valid @RequestBody ProductRequestDTO dto) {
+        return ResponseEntity.ok(service.create(dto));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponseDTO> update(@PathVariable Long id,
+                                                     @Valid @RequestBody ProductRequestDTO dto) {
+        return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
