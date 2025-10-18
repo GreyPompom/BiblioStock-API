@@ -44,9 +44,8 @@ public class UserService {
 
         User user = User.builder()
                 .username(dto.username())
+                .fullName(dto.fullName())
                 .email(dto.email())
-                .password(dto.password()) // depois pode ser criptografada
-                .role(dto.role())
                 .build();
 
         return UserResponseDTO.fromEntity(repository.save(user));
@@ -67,8 +66,7 @@ public class UserService {
 
         user.setUsername(dto.username());
         user.setEmail(dto.email());
-        user.setPassword(dto.password());
-        user.setRole(dto.role());
+        user.setFullName(dto.fullName());
 
         return UserResponseDTO.fromEntity(repository.save(user));
     }

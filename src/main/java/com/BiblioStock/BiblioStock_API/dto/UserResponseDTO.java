@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 public record UserResponseDTO(
         Long id,
         String username,
-        String email,
+        String fullName,
+        String email, 
         LocalDateTime createdAt
         ) {
 
@@ -16,6 +17,7 @@ public record UserResponseDTO(
         return new UserResponseDTO(
                 user.getId(),
                 user.getUsername(),
+                user.getFullName(),
                 user.getEmail(),
                 user.getCreatedAt()
         );
