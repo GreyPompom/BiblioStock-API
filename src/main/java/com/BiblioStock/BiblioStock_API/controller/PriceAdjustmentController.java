@@ -25,7 +25,6 @@ public class PriceAdjustmentController {
     }
 
     @PostMapping("/adjust")
-    public ResponseEntity<String> applyAdjustment(@Valid @RequestBody PriceAdjustmentRequest dto) {
         service.applyAdjustment(dto);
         return ResponseEntity.ok("Reajuste aplicado com sucesso.");
     }

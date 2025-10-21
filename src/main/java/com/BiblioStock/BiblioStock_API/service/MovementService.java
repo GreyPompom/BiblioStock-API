@@ -75,6 +75,7 @@ public class MovementService {
                 .movementDate(LocalDateTime.now())
                 .user(user)
                 .build();
+        
 
         return MovementResponseDTO.fromEntity(movementRepository.save(movement));
     }
