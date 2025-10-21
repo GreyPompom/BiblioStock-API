@@ -78,4 +78,6 @@ public class CategoryService {
             throw new DataIntegrityViolationException("Não é permitido excluir a categoria pois há produtos vinculados.");
         }
     }
+
+    
 }
