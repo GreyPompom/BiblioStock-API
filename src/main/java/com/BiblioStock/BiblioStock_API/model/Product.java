@@ -12,7 +12,9 @@ import java.util.Set;
 @Table(name = "products")
 @Getter
 @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Product {
 
     @Id
@@ -65,6 +67,9 @@ public class Product {
             inverseJoinColumns = @JoinColumn(name = "author_id")
     )
     private Set<Author> authors = new HashSet<>();
+
+    @Column(name = "price_with_percent")
+    private BigDecimal priceWithPercent;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt = OffsetDateTime.now();

@@ -19,7 +19,8 @@ public record ProductResponseDTO(
         String publisher,
         String isbn,
         CategoryResponseDTO category,
-        Set<AuthorResponseDTO> authors
+        Set<AuthorResponseDTO> authors,
+        BigDecimal priceWithPercent
 ) {
     public static ProductResponseDTO fromEntity(Product p) {
         return new ProductResponseDTO(
@@ -38,7 +39,8 @@ public record ProductResponseDTO(
                         ? p.getAuthors().stream()
                             .map(AuthorResponseDTO::fromEntity)
                             .collect(Collectors.toSet())
-                        : Set.of()
+                        : Set.of(),
+                p.getPriceWithPercent()
         );
     }
 }

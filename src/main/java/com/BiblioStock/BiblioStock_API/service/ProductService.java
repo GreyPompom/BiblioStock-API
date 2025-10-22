@@ -27,13 +27,16 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
+    private final SettingsService settingsService;
 
     public ProductService(ProductRepository productRepository,
-            CategoryRepository categoryRepository,
-            AuthorRepository authorRepository) {
+                          CategoryRepository categoryRepository,
+                          AuthorRepository authorRepository,
+                          SettingsService settingsService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.authorRepository = authorRepository;
+        this.settingsService = settingsService;
     }
 
     public List<ProductResponseDTO> findAll() {
@@ -86,6 +89,8 @@ public class ProductService {
                 .authors(authors)
                 .build();
 
+        product.setPriceWithPercent(getAdjustedPrice(product));
+
         return ProductResponseDTO.fromEntity(productRepository.save(product));
     }
 
@@ -134,6 +139,7 @@ public class ProductService {
             }
         }
 
+        
         //  - SKU duplicado
         if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
             if (productId == null) {
@@ -180,4 +186,15 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    
+    public BigDecimal getAdjustedPrice(Product product) {
+        BigDecimal base = product.getPrice();
+        Category category = product.getCategory();
+        BigDecimal categoryAdj = category != null ? category.getDefaultAdjustmentPercent() : BigDecimal.ZERO;
+       
+        BigDecimal globalAdj = settingsService.getGlobalAdjustment(); // obtém do banco
+        return base.multiply(BigDecimal.ONE.add(categoryAdj.add(globalAdj).divide(BigDecimal.valueOf(100))));
+    }
 }
+
+
