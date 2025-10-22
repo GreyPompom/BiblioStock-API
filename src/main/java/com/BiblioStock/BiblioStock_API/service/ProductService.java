@@ -1,5 +1,13 @@
 package com.BiblioStock.BiblioStock_API.service;
 
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
 import com.BiblioStock.BiblioStock_API.exception.BusinessException;
@@ -10,13 +18,6 @@ import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Service
 public class ProductService {
@@ -24,13 +25,16 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
+    private final SettingsService settingsService;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          AuthorRepository authorRepository) {
+                          AuthorRepository authorRepository,
+                          SettingsService settingsService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.authorRepository = authorRepository;
+        this.settingsService = settingsService;
     }
 
     public List<ProductResponseDTO> findAll() {
@@ -71,6 +75,8 @@ public class ProductService {
                 .category(category)
                 .authors(authors)
                 .build();
+
+        product.setPriceWithPercent(getAdjustedPrice(product));
 
         return ProductResponseDTO.fromEntity(productRepository.save(product));
     }
@@ -118,7 +124,7 @@ public class ProductService {
             if (productId == null) throw new BusinessException("Já existe um produto com o mesmo ISBN.");
         }
         
-         //  - SKU duplicado
+        //  - SKU duplicado
         if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
             if (productId == null) throw new BusinessException("Já existe um produto com o mesmo sku.");
         }
@@ -139,4 +145,15 @@ public class ProductService {
             throw new BusinessException("O estoque não pode ser negativo.");
         }
     }
+    
+    public BigDecimal getAdjustedPrice(Product product) {
+        BigDecimal base = product.getPrice();
+        Category category = product.getCategory();
+        BigDecimal categoryAdj = category != null ? category.getDefaultAdjustmentPercent() : BigDecimal.ZERO;
+       
+        BigDecimal globalAdj = settingsService.getGlobalAdjustment(); // obtém do banco
+        return base.multiply(BigDecimal.ONE.add(categoryAdj.add(globalAdj).divide(BigDecimal.valueOf(100))));
+    }
 }
+
+
