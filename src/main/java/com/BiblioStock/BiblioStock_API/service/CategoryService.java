@@ -9,15 +9,18 @@ import org.springframework.transaction.annotation.Transactional;
 import com.BiblioStock.BiblioStock_API.dto.*;
 import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
+import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 import com.BiblioStock.BiblioStock_API.exception.*;
 
 
 @Service
 public class CategoryService {
     private final CategoryRepository repository;
+    private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository repository) {
+    public CategoryService(CategoryRepository repository, ProductRepository productRepository) {
         this.repository = repository;
+        this.productRepository = productRepository;
     }
 
     public List<CategoryResponseDTO> findAll() {
@@ -65,6 +68,11 @@ public class CategoryService {
     public void delete(Long id) {
         Category category = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id " + id));
+                
+            if (productRepository.existsByCategory(category)) {
+                throw new BusinessException("Não é possível excluir uma categoria vinculada a produtos.");
+            }
+        
 //  // Simulação de regra: impedir exclusão se tiver produtos
 //         // Exemplo: if (productRepository.existsByCategory(category)) { throw ... }
 
