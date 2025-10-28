@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import com.BiblioStock.BiblioStock_API.model.Author;
 import java.util.stream.Collectors;
 
-
 public record ProductResponseDTO(
         Long id,
         String name,
@@ -18,10 +17,12 @@ public record ProductResponseDTO(
         BigDecimal maxQty,
         String publisher,
         String isbn,
+        String sku,
         CategoryResponseDTO category,
         Set<AuthorResponseDTO> authors,
         BigDecimal priceWithPercent
-) {
+        ) {
+
     public static ProductResponseDTO fromEntity(Product p) {
         return new ProductResponseDTO(
                 p.getId(),
@@ -34,12 +35,13 @@ public record ProductResponseDTO(
                 p.getMaxQty(),
                 p.getPublisher(),
                 p.getIsbn(),
+                p.getSku(), 
                 p.getCategory() != null ? CategoryResponseDTO.fromEntity(p.getCategory()) : null,
                 p.getAuthors() != null
-                        ? p.getAuthors().stream()
-                            .map(AuthorResponseDTO::fromEntity)
-                            .collect(Collectors.toSet())
-                        : Set.of(),
+                ? p.getAuthors().stream()
+                        .map(AuthorResponseDTO::fromEntity)
+                        .collect(Collectors.toSet())
+                : Set.of(),
                 p.getPriceWithPercent()
         );
     }

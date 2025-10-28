@@ -14,9 +14,9 @@ import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentRequestDTO;
 import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
 import com.BiblioStock.BiblioStock_API.repository.PriceAdjustmentRepository;
-import lombok.extern.slf4j.Slf4j;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -36,6 +36,7 @@ public class PriceAdjustmentService {
         Long appliedBy = 7L; // ID fixo para teste
 
         try {
+            //arquitetura hexagonal 
             // Validações antes de chamar o banco
             validateAdjustmentRequest(dto);
 

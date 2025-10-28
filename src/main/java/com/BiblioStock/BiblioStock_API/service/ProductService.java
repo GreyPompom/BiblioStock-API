@@ -30,9 +30,9 @@ public class ProductService {
     private final SettingsService settingsService;
 
     public ProductService(ProductRepository productRepository,
-                          CategoryRepository categoryRepository,
-                          AuthorRepository authorRepository,
-                          SettingsService settingsService) {
+            CategoryRepository categoryRepository,
+            AuthorRepository authorRepository,
+            SettingsService settingsService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.authorRepository = authorRepository;
@@ -70,10 +70,7 @@ public class ProductService {
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 
-        Set<Author> authors = new HashSet<>();
-        if (dto.authorIds() != null && !dto.authorIds().isEmpty()) {
-            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
-        }
+        Set<Author> authors = validateAndGetAuthors(dto);
 
         Product product = Product.builder()
                 .name(dto.name())
@@ -88,10 +85,15 @@ public class ProductService {
                 .category(category)
                 .authors(authors)
                 .build();
-
+        System.out.println("=== DEBUG: Salvando produto com " + product.getAuthors().size() + " autores");
         product.setPriceWithPercent(getAdjustedPrice(product));
+        
+        // Salva o produto primeiro
+        Product savedProduct = productRepository.save(product);
 
-        return ProductResponseDTO.fromEntity(productRepository.save(product));
+        // FORÇA o flush para inserir na tabela product_authors
+        productRepository.flush();
+        return ProductResponseDTO.fromEntity(savedProduct);
     }
 
     @Transactional
@@ -105,8 +107,11 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 
         Set<Author> authors = new HashSet<>();
-        if (dto.authorIds() != null && !dto.authorIds().isEmpty()) {
+        if (dto.productType().equalsIgnoreCase("Livro") && dto.authorIds() != null) {
             authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
+            if (authors.isEmpty()) {
+                throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
+            }
         }
 
         existing.setName(dto.name());
@@ -139,7 +144,6 @@ public class ProductService {
             }
         }
 
-        
         //  - SKU duplicado
         if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
             if (productId == null) {
@@ -164,6 +168,32 @@ public class ProductService {
         }
     }
 
+    private Set<Author> validateAndGetAuthors(ProductRequestDTO dto) {
+        Set<Author> authors = new HashSet<>();
+        System.out.println("=== DEBUG: Buscando autores com IDs: " + dto.authorIds());
+        if (dto.productType().equalsIgnoreCase("Livro")) {
+            if (dto.authorIds() == null || dto.authorIds().isEmpty()) {
+                throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
+            }
+
+            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
+            System.out.println("=== DEBUG: Autores encontrados: " + authors.size());
+            authors.forEach(author
+                    -> System.out.println("=== DEBUG: Autor - ID: " + author.getId() + ", Nome: " + author.getFullName())
+            );
+
+            // Validação extra
+            if (authors.size() != dto.authorIds().size()) {
+                Set<Long> foundIds = authors.stream().map(Author::getId).collect(Collectors.toSet());
+                Set<Long> missingIds = dto.authorIds().stream()
+                        .filter(id -> !foundIds.contains(id))
+                        .collect(Collectors.toSet());
+                throw new ResourceNotFoundException("Autores não encontrados: " + missingIds);
+            }
+        }
+        return authors;
+    }
+
     public List<ProductsPerCategoryDTO> getProductsPerCategory() {
         return productRepository.findProductsPerCategoryRaw()
                 .stream()
@@ -186,15 +216,12 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    
     public BigDecimal getAdjustedPrice(Product product) {
         BigDecimal base = product.getPrice();
         Category category = product.getCategory();
         BigDecimal categoryAdj = category != null ? category.getDefaultAdjustmentPercent() : BigDecimal.ZERO;
-       
+
         BigDecimal globalAdj = settingsService.getGlobalAdjustment(); // obtém do banco
         return base.multiply(BigDecimal.ONE.add(categoryAdj.add(globalAdj).divide(BigDecimal.valueOf(100))));
     }
 }
-
-
