@@ -45,14 +45,14 @@ public class MovementController {
         @ApiResponse(responseCode = "201", description = "Movimentação registrada com sucesso",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = MovementResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
-        @ApiResponse(responseCode = "409", description = "Conflito - Movimentação já registrada", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Produto ou recurso não encontrado", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PostMapping
     public ResponseEntity<MovementResponseDTO> create(
         @Parameter(description = "DTO com os dados da movimentação", required = true)
         @Valid @RequestBody MovementRequestDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
+        return ResponseEntity.status(201).body(service.create(dto));
     }
 }

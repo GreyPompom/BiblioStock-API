@@ -27,7 +27,7 @@ public class UserController {
         this.service = service;
     }
 
-    @Operation(summary = "Retorna todos os usuários")
+    @Operation(summary = "Retorna todos os usuários", description = "Lista todos os usuários cadastrados no sistema.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso",
             content = @Content(mediaType = "application/json",
@@ -59,14 +59,15 @@ public class UserController {
         @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = UserResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Conflito - Usuário já existe", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PostMapping
     public ResponseEntity<UserResponseDTO> create(
         @Parameter(description = "DTO com os dados do usuário", required = true)
         @Valid @RequestBody UserRequestDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
+        return ResponseEntity.status(201).body(service.create(dto));
     }
 
     @Operation(summary = "Atualiza um usuário existente", description = "Atualiza os dados de um usuário pelo ID.")
@@ -74,8 +75,9 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = UserResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content),
         @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Conflito - Usuário já existe", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PutMapping("/{id}")

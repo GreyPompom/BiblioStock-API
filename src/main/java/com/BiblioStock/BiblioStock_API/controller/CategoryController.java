@@ -44,7 +44,8 @@ public class CategoryController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Categoria encontrada",
             content = @Content(schema = @Schema(implementation = CategoryResponseDTO.class))),
-        @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content)
+        @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponseDTO> getById(
@@ -56,8 +57,7 @@ public class CategoryController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Categoria criada com sucesso",
             content = @Content(schema = @Schema(implementation = CategoryResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
-        @ApiResponse(responseCode = "409", description = "Conflito - Categoria já existe", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PostMapping
@@ -71,13 +71,15 @@ public class CategoryController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Categoria atualizada com sucesso",
             content = @Content(schema = @Schema(implementation = CategoryResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content),
         @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponseDTO> update(
-        @Parameter(description = "ID da categoria") @PathVariable Long id,
+        @Parameter(description = "ID da categoria", required = true) 
+        @PathVariable Long id,
+        @Parameter(description = "DTO com os dados atualizados", required = true) 
         @Valid @RequestBody CategoryRequestDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -91,7 +93,8 @@ public class CategoryController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(
-        @Parameter(description = "ID da categoria") @PathVariable Long id) {
+        @Parameter(description = "ID da categoria", required = true) 
+        @PathVariable Long id) {
         try {
             service.delete(id);
             return ResponseEntity.ok("Categoria excluída com sucesso");

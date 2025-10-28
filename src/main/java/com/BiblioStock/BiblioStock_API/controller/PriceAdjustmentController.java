@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentRequestDTO;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
 import com.BiblioStock.BiblioStock_API.service.PriceAdjustmentService;
-
 import jakarta.validation.Valid;
 
 @RestController
@@ -31,8 +30,9 @@ public class PriceAdjustmentController {
 
     @Operation(summary = "Aplica um reajuste de preço", description = "Aplica um novo reajuste nos produtos de acordo com os dados informados.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Reajuste aplicado com sucesso", content = @Content),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos para reajuste", content = @Content),
+        @ApiResponse(responseCode = "201", description = "Reajuste aplicado com sucesso", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
         @ApiResponse(responseCode = "409", description = "Conflito - Reajuste já existente ou conflito de valores", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor ao aplicar o reajuste", content = @Content)
     })
@@ -41,7 +41,7 @@ public class PriceAdjustmentController {
         @Parameter(description = "DTO com os dados do reajuste", required = true)
         @Valid @RequestBody PriceAdjustmentRequestDTO dto) {
         service.applyAdjustment(dto);
-        return ResponseEntity.ok("Reajuste aplicado com sucesso.");
+        return ResponseEntity.status(201).build();
     }
 
     @Operation(summary = "Lista histórico de reajustes de preço", description = "Retorna uma lista com todos os reajustes aplicados no sistema.")

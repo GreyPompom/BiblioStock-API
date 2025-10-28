@@ -61,15 +61,14 @@ public class AuthorController {
         @ApiResponse(responseCode = "201", description = "Autor criado com sucesso",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = AuthorResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
-        @ApiResponse(responseCode = "409", description = "Conflito - Autor já existe", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou negócio inválido", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PostMapping
     public ResponseEntity<AuthorResponseDTO> create(
         @Parameter(description = "DTO com os dados do autor", required = true) 
         @Valid @RequestBody AuthorRequestDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
+        return ResponseEntity.status(201).body(service.create(dto));
     }
 
     @Operation(summary = "Atualiza um autor existente", description = "Atualiza os dados de um autor pelo ID.")
@@ -77,9 +76,8 @@ public class AuthorController {
         @ApiResponse(responseCode = "200", description = "Autor atualizado com sucesso",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = AuthorResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou negócio inválido", content = @Content),
         @ApiResponse(responseCode = "404", description = "Autor não encontrado", content = @Content),
-        @ApiResponse(responseCode = "409", description = "Conflito - Autor já existe", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PutMapping("/{id}")

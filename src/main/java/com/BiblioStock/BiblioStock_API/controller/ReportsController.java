@@ -47,6 +47,7 @@ public class ReportsController {
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = ProductsPerCategoryDTO.class))),
         @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Requisição inválida", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @GetMapping("/products-per-category/{categoryId}")

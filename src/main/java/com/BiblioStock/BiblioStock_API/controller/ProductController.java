@@ -52,7 +52,8 @@ public class ProductController {
         @ApiResponse(responseCode = "200", description = "Produto encontrado",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content)
+        @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> getById(
@@ -74,7 +75,7 @@ public class ProductController {
     public ResponseEntity<ProductResponseDTO> create(
         @Parameter(description = "DTO com os dados do produto", required = true)
         @Valid @RequestBody ProductRequestDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
+        return ResponseEntity.status(201).body(service.create(dto));
     }
 
     @Operation(summary = "Atualiza um produto existente", description = "Atualiza os dados de um produto pelo ID.")
@@ -82,7 +83,7 @@ public class ProductController {
         @ApiResponse(responseCode = "200", description = "Produto atualizado com sucesso",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou violação de regra de negócio", content = @Content),
         @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
@@ -99,6 +100,7 @@ public class ProductController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso", content = @Content),
         @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Não é permitido excluir produto com vínculos", content = @Content),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @DeleteMapping("/{id}")
