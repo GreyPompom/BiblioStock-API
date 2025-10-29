@@ -17,10 +17,7 @@ public class SettingsService {
         this.priceAdjustmentService = priceAdjustmentService;
     }
 
-    /**
-     * Retorna o percentual global atual. Caso não haja nenhum ajuste global
-     * registrado, retorna BigDecimal.ZERO
-     */
+    
     public BigDecimal getGlobalAdjustment() {
         return priceAdjustmentService.getLatestGlobalAdjustment();
     }

@@ -18,4 +18,14 @@ public record CategoryResponseDTO(
                 category.getDefaultAdjustmentPercent()
         );
     }
+
+    public Category toEntity() {
+        Category category = new Category();
+        category.setId(this.id);
+        category.setName(this.name);
+        category.setSize(this.size);
+        category.setPackagingType(this.packagingType);
+        category.setDefaultAdjustmentPercent(this.defaultAdjustmentPercent);
+        return category;
+    }
 }

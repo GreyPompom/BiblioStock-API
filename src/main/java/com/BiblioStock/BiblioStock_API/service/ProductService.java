@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductsPerCategoryDTO;
@@ -17,25 +19,27 @@ import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Author;
 import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.model.Product;
-import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
-import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
+import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
+import com.BiblioStock.BiblioStock_API.service.SettingsService;
+import com.BiblioStock.BiblioStock_API.service.AuthorService;
+import com.BiblioStock.BiblioStock_API.service.CategoryService;
 
 @Service
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final AuthorRepository authorRepository;
+    private final CategoryService categoryService;
+    private final AuthorService authorService;
     private final SettingsService settingsService;
 
     public ProductService(ProductRepository productRepository,
-            CategoryRepository categoryRepository,
-            AuthorRepository authorRepository,
+            CategoryService categoryService,
+            AuthorService authorService,
             SettingsService settingsService) {
         this.productRepository = productRepository;
-        this.categoryRepository = categoryRepository;
-        this.authorRepository = authorRepository;
+        this.categoryService = categoryService;
+        this.authorService = authorService;
         this.settingsService = settingsService;
     }
 
@@ -54,7 +58,7 @@ public class ProductService {
 
     // Find products by category
     public List<ProductResponseDTO> findByCategory(Long categoryId) {
-        if (!categoryRepository.existsById(categoryId)) {
+        if (!categoryService.existsById(categoryId)) {
             throw new ResourceNotFoundException("Categoria não encontrada com id " + categoryId);
         }
         List<Product> products = productRepository.findByCategory_Id(categoryId);
@@ -67,8 +71,7 @@ public class ProductService {
     public ProductResponseDTO create(ProductRequestDTO dto) {
         validateBusinessRules(dto, null);
 
-        Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
+        CategoryResponseDTO categoryResponseDTO = categoryService.findById(dto.categoryId());
 
         Set<Author> authors = validateAndGetAuthors(dto);
 
@@ -82,12 +85,12 @@ public class ProductService {
                 .maxQty(dto.maxQty())
                 .publisher(dto.publisher())
                 .isbn(dto.isbn())
-                .category(category)
+                .category(categoryResponseDTO.toEntity())
                 .authors(authors)
                 .build();
         System.out.println("=== DEBUG: Salvando produto com " + product.getAuthors().size() + " autores");
         product.setPriceWithPercent(getAdjustedPrice(product));
-        
+
         // Salva o produto primeiro
         Product savedProduct = productRepository.save(product);
 
@@ -103,16 +106,12 @@ public class ProductService {
 
         validateBusinessRules(dto, id);
 
-        Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
-
-        Set<Author> authors = new HashSet<>();
-        if (dto.productType().equalsIgnoreCase("Livro") && dto.authorIds() != null) {
-            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
-            if (authors.isEmpty()) {
-                throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
-            }
+        CategoryResponseDTO categoryResponseDTO = categoryService.findById(dto.categoryId());
+        if (categoryResponseDTO == null) {
+            throw new ResourceNotFoundException("Categoria não encontrada");
         }
+
+        Set<Author> authors = validateAndGetAuthors(dto);
 
         existing.setName(dto.name());
         existing.setProductType(dto.productType());
@@ -123,7 +122,7 @@ public class ProductService {
         existing.setMaxQty(dto.maxQty());
         existing.setPublisher(dto.publisher());
         existing.setIsbn(dto.isbn());
-        existing.setCategory(category);
+        existing.setCategory(categoryResponseDTO.toEntity());
         existing.setAuthors(authors);
 
         return ProductResponseDTO.fromEntity(productRepository.save(existing));
@@ -176,8 +175,13 @@ public class ProductService {
                 throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
             }
 
-            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
-            System.out.println("=== DEBUG: Autores encontrados: " + authors.size());
+            List<AuthorResponseDTO> authorDTOs = authorService.findAllById(dto.authorIds());
+            System.out.println("=== DEBUG: Autores encontrados: " + authorDTOs.size());
+
+            authors = authorDTOs.stream()
+                    .map(AuthorResponseDTO::toEntity)
+                    .collect(Collectors.toSet());
+
             authors.forEach(author
                     -> System.out.println("=== DEBUG: Autor - ID: " + author.getId() + ", Nome: " + author.getFullName())
             );
@@ -224,4 +228,26 @@ public class ProductService {
         BigDecimal globalAdj = settingsService.getGlobalAdjustment(); // obtém do banco
         return base.multiply(BigDecimal.ONE.add(categoryAdj.add(globalAdj).divide(BigDecimal.valueOf(100))));
     }
+
+    // RN020/RN021 - Atualizar estoque
+    @Transactional
+    public Product updateStock(Long productId, BigDecimal quantity, MovementType movementType) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id " + productId));
+
+        BigDecimal newStock = product.getStockQty();
+
+        if (movementType == MovementType.ENTRADA) {
+            newStock = newStock.add(quantity);
+        } else if (movementType == MovementType.SAIDA) {
+            newStock = newStock.subtract(quantity);
+            if (newStock.compareTo(BigDecimal.ZERO) < 0) {
+                throw new BusinessException("Estoque insuficiente para esta saída");
+            }
+        }
+
+        product.setStockQty(newStock);
+        return productRepository.save(product);
+    }
+
 }
