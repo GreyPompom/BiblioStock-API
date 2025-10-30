@@ -58,4 +58,5 @@ public class CategoryController {
                     .body("Erro inesperado ao excluir categoria: " + e.getMessage());
         }
     }
+
 }
