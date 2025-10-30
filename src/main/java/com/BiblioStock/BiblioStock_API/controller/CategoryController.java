@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.BiblioStock.BiblioStock_API.dto.*;
 import com.BiblioStock.BiblioStock_API.service.CategoryService;
+import com.BiblioStock.BiblioStock_API.exception.BusinessException;
+import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
+
 import jakarta.validation.Valid;
 
 @RestController

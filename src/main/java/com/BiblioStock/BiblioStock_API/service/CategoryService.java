@@ -12,16 +12,20 @@ import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
+import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 
 @Service
 public class CategoryService {
 
     private final CategoryRepository repository;
     private final PriceAdjustmentService priceAdjustmentService;
+    private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository repository, PriceAdjustmentService priceAdjustmentService) {
+
+    public CategoryService(CategoryRepository repository, PriceAdjustmentService priceAdjustmentService, ProductRepository productRepository) {
         this.repository = repository;
         this.priceAdjustmentService = priceAdjustmentService;
+        this.productRepository = productRepository;
     }
 
     public boolean existsById(Long id) {
@@ -99,6 +103,11 @@ public class CategoryService {
     ) {
         Category category = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id " + id));
+
+         boolean hasProducts = productRepository.existsByCategory(category);
+        if (hasProducts) {
+            throw new BusinessException("Não é possível excluir uma categoria vinculada a produtos.");
+        }
         // if (productRepository.existsByCategory(category)) {
         //     throw new BusinessException("Não é possível excluir uma categoria vinculada a produtos.");
         // }
