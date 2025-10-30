@@ -11,12 +11,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentRequestDTO;
+import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentResponseDTO;
 import com.BiblioStock.BiblioStock_API.exception.BusinessException;
+import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
 import com.BiblioStock.BiblioStock_API.repository.PriceAdjustmentRepository;
-import lombok.extern.slf4j.Slf4j;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -36,6 +38,7 @@ public class PriceAdjustmentService {
         Long appliedBy = 7L; // ID fixo para teste
 
         try {
+            //arquitetura hexagonal 
             // Validações antes de chamar o banco
             validateAdjustmentRequest(dto);
 
@@ -62,7 +65,7 @@ public class PriceAdjustmentService {
 
             log.info("Ajuste de preço aplicado: {}", result);
             return result;
-            
+
 // {
 //   "message": "Ajuste CATEGORIA aplicado com sucesso",
 //   "products_updated": 15,
@@ -70,7 +73,6 @@ public class PriceAdjustmentService {
 //   "scope_type": "CATEGORIA",
 //   "percent_applied": 0.05
 // }
-
         } catch (DataAccessException ex) {
             log.error("Erro ao aplicar ajuste de preço: {}", ex.getMessage());
             throw new BusinessException("Erro ao aplicar reajuste de preços: " + ex.getMostSpecificCause().getMessage());
@@ -128,5 +130,25 @@ public class PriceAdjustmentService {
         if (dto.scopeType().equals("CATEGORIA") && dto.categoryId() == null) {
             throw new BusinessException("categoryId é obrigatório para ajuste por CATEGORIA");
         }
+    }
+
+    public List<PriceAdjustmentResponseDTO> getAllCategoriesPercent() {
+        return repository.findByScopeType("CATEGORIA")
+                .stream()
+                .map(pa -> new PriceAdjustmentResponseDTO(
+                pa.getScopeType(),
+                pa.getPercent(),
+                pa.getCategory() != null ? pa.getCategory().getId() : null,
+                pa.getCategory() != null ? pa.getCategory().getName() : null, 
+                pa.getNote()
+        ))
+                .toList();
+    }
+
+    public PriceAdjustmentResponseDTO getCategoryPercent(Long categoryId) {
+        PriceAdjustment entity = repository.findByScopeTypeAndCategoryId("CATEGORIA", categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Percentual não encontrado para a categoria " + categoryId));
+
+        return PriceAdjustmentResponseDTO.fromEntity(entity);
     }
 }

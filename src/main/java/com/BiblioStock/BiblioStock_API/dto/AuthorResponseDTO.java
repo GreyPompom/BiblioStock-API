@@ -31,4 +31,13 @@ public record AuthorResponseDTO(
                 author.getBiography()
         );
     }
+    public Author toEntity() {
+        Author author = new Author();
+        author.setId(this.id);
+        author.setFullName(this.fullName);
+        author.setNationality(this.nationality);
+        author.setBirthDate(this.birthDate);
+        author.setBiography(this.biography);
+        return author;
+    }
 }

@@ -40,6 +40,7 @@ public record ProductResponseDTO(
         String isbn,
 
         @Schema(description = "Categoria do produto", required = true)
+        String sku,
         CategoryResponseDTO category,
 
         @Schema(description = "Autores do produto", required = true)
@@ -47,7 +48,8 @@ public record ProductResponseDTO(
 
         @Schema(description = "Preço calculado considerando percentuais de reajuste", example = "54.90", required = false)
         BigDecimal priceWithPercent
-) {
+        ) {
+
     public static ProductResponseDTO fromEntity(Product p) {
         return new ProductResponseDTO(
                 p.getId(),
@@ -60,13 +62,40 @@ public record ProductResponseDTO(
                 p.getMaxQty(),
                 p.getPublisher(),
                 p.getIsbn(),
+                p.getSku(),
                 p.getCategory() != null ? CategoryResponseDTO.fromEntity(p.getCategory()) : null,
                 p.getAuthors() != null
-                        ? p.getAuthors().stream()
-                            .map(AuthorResponseDTO::fromEntity)
-                            .collect(Collectors.toSet())
-                        : Set.of(),
+                ? p.getAuthors().stream()
+                        .map(AuthorResponseDTO::fromEntity)
+                        .collect(Collectors.toSet())
+                : Set.of(),
                 p.getPriceWithPercent()
         );
+    }
+
+    public Product toEntity() {
+        Product product = new Product();
+        product.setId(this.id);
+        product.setName(this.name);
+        product.setProductType(this.productType);
+        product.setPrice(this.price);
+        product.setUnit(this.unit);
+        product.setStockQty(this.stockQty);
+        product.setMinQty(this.minQty);
+        product.setMaxQty(this.maxQty);
+        product.setPublisher(this.publisher);
+        product.setIsbn(this.isbn);
+        product.setSku(this.sku);
+        if (this.category != null) {
+            product.setCategory(this.category.toEntity());
+        }
+        if (this.authors != null) {
+            Set<Author> authorEntities = this.authors.stream()
+                    .map(AuthorResponseDTO::toEntity)
+                    .collect(Collectors.toSet());
+            product.setAuthors(authorEntities);
+        }
+        product.setPriceWithPercent(this.priceWithPercent);
+        return product;
     }
 }

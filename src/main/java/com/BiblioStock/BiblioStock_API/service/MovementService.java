@@ -22,14 +22,14 @@ import java.util.List;
 public class MovementService {
 
     private final MovementRepository movementRepository;
-    private final ProductRepository productRepository;
+    private final ProductService productService;
     private final UserRepository userRepository;
 
     public MovementService(MovementRepository movementRepository,
-            ProductRepository productRepository,
+            ProductService productService,
             UserRepository userRepository) {
         this.movementRepository = movementRepository;
-        this.productRepository = productRepository;
+        this.productService = productService;
         this.userRepository = userRepository;
     }
 
@@ -42,9 +42,6 @@ public class MovementService {
 
     @Transactional
     public MovementResponseDTO create(MovementRequestDTO dto) {
-        Product product = productRepository.findById(dto.productId())
-                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
-
         User user = null;
         if (dto.userId() != null) {
             user = userRepository.findById(dto.userId())
@@ -52,23 +49,11 @@ public class MovementService {
         }
 
         // RN020/RN021 - Atualizar estoque
-        BigDecimal newStock = product.getStockQty();
-        if (dto.movementType() == MovementType.ENTRADA) {
-            newStock = newStock.add(dto.quantity());
-        } else {
-            // SAIDA
-            newStock = newStock.subtract(dto.quantity());
-            if (newStock.compareTo(BigDecimal.ZERO) < 0) {
-                throw new BusinessException("Estoque insuficiente para esta saída");
-            }
-        }
-
-        product.setStockQty(newStock);
-        productRepository.save(product);
+        Product updatedProduct = productService.updateStock(dto.productId(), dto.quantity(), dto.movementType());
 
         Movement movement = Movement.builder()
-                .product(product)
-                .productNameSnapshot(product.getName())
+                .product(updatedProduct)
+                .productNameSnapshot(updatedProduct.getName())
                 .quantity(dto.quantity())
                 .movementType(dto.movementType())
                 .note(dto.note())
@@ -76,7 +61,6 @@ public class MovementService {
                 .user(user)
                 .build();
         
-
         return MovementResponseDTO.fromEntity(movementRepository.save(movement));
     }
 }

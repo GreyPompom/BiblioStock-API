@@ -1,22 +1,24 @@
 package com.BiblioStock.BiblioStock_API.service;
 
-import  com.BiblioStock.BiblioStock_API.dto.AuthorRequestDTO;
-import  com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
-import  com.BiblioStock.BiblioStock_API.exception.BusinessException;
-import  com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
-import  com.BiblioStock.BiblioStock_API.model.Author;
-import  com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
+import com.BiblioStock.BiblioStock_API.dto.AuthorRequestDTO;
+import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
+import com.BiblioStock.BiblioStock_API.exception.BusinessException;
+import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
+import com.BiblioStock.BiblioStock_API.model.Author;
+import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import java.util.List;
 
 @Service
-public class AuthorService{
+public class AuthorService {
 
     private final AuthorRepository repository;
 
-    public AuthorService(AuthorRepository repository){
+    public AuthorService(AuthorRepository repository) {
         this.repository = repository;
     }
 
@@ -31,6 +33,13 @@ public class AuthorService{
         Author author = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Autor não encontrado com id " + id));
         return AuthorResponseDTO.fromEntity(author);
+    }
+
+    public List<AuthorResponseDTO> findAllById(Set<Long> authorIds) {
+        return repository.findAllById(authorIds)
+                .stream()
+                .map(AuthorResponseDTO::fromEntity)
+                .toList();
     }
 
     @Transactional
@@ -76,3 +85,4 @@ public class AuthorService{
         repository.delete(author);
     }
 }
+

@@ -1,29 +1,31 @@
 package com.BiblioStock.BiblioStock_API.service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.BiblioStock.BiblioStock_API.dto.*;
+import com.BiblioStock.BiblioStock_API.dto.CategoryRequestDTO;
+import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
+import com.BiblioStock.BiblioStock_API.exception.BusinessException;
+import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
-import com.BiblioStock.BiblioStock_API.exception.*;
-import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 
 @Service
 public class CategoryService {
 
     private final CategoryRepository repository;
     private final PriceAdjustmentService priceAdjustmentService;
-    private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository repository, PriceAdjustmentService priceAdjustmentService, ProductRepository productRepository) {
+    public CategoryService(CategoryRepository repository, PriceAdjustmentService priceAdjustmentService) {
         this.repository = repository;
         this.priceAdjustmentService = priceAdjustmentService;
-        this.productRepository = productRepository;
+    }
+
+    public boolean existsById(Long id) {
+        return repository.existsById(id);
     }
 
     public List<CategoryResponseDTO> findAll() {
@@ -108,5 +110,4 @@ public class CategoryService {
         }
     }
 
-    
 }
