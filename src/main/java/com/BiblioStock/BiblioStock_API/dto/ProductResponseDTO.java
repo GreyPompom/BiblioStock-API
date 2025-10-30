@@ -35,7 +35,7 @@ public record ProductResponseDTO(
                 p.getMaxQty(),
                 p.getPublisher(),
                 p.getIsbn(),
-                p.getSku(), 
+                p.getSku(),
                 p.getCategory() != null ? CategoryResponseDTO.fromEntity(p.getCategory()) : null,
                 p.getAuthors() != null
                 ? p.getAuthors().stream()
@@ -44,5 +44,31 @@ public record ProductResponseDTO(
                 : Set.of(),
                 p.getPriceWithPercent()
         );
+    }
+
+    public Product toEntity() {
+        Product product = new Product();
+        product.setId(this.id);
+        product.setName(this.name);
+        product.setProductType(this.productType);
+        product.setPrice(this.price);
+        product.setUnit(this.unit);
+        product.setStockQty(this.stockQty);
+        product.setMinQty(this.minQty);
+        product.setMaxQty(this.maxQty);
+        product.setPublisher(this.publisher);
+        product.setIsbn(this.isbn);
+        product.setSku(this.sku);
+        if (this.category != null) {
+            product.setCategory(this.category.toEntity());
+        }
+        if (this.authors != null) {
+            Set<Author> authorEntities = this.authors.stream()
+                    .map(AuthorResponseDTO::toEntity)
+                    .collect(Collectors.toSet());
+            product.setAuthors(authorEntities);
+        }
+        product.setPriceWithPercent(this.priceWithPercent);
+        return product;
     }
 }
