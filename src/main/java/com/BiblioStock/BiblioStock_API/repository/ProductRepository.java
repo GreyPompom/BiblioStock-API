@@ -12,7 +12,7 @@ import com.BiblioStock.BiblioStock_API.model.Category;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-     boolean existsByCategory(Category category);
+    boolean existsByCategory(Category category);
     boolean existsByIsbn(String isbn);
     boolean existsBySku(String sku);
     Optional<Product> findByNameIgnoreCase(String name);

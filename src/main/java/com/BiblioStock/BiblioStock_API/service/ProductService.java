@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Lazy;
+
 
 import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
@@ -34,7 +36,7 @@ public class ProductService {
     private final SettingsService settingsService;
 
     public ProductService(ProductRepository productRepository,
-            CategoryService categoryService,
+            @Lazy CategoryService categoryService,
             AuthorService authorService,
             SettingsService settingsService) {
         this.productRepository = productRepository;
@@ -248,6 +250,10 @@ public class ProductService {
 
         product.setStockQty(newStock);
         return productRepository.save(product);
+    }
+
+    public boolean isCategoryLinkedToProduct(Category category) {
+        return productRepository.existsByCategory(category);
     }
 
 }
