@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Lazy;
 
 import com.BiblioStock.BiblioStock_API.dto.CategoryRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
@@ -12,16 +13,20 @@ import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
+import com.BiblioStock.BiblioStock_API.service.ProductService;
 
 @Service
 public class CategoryService {
 
     private final CategoryRepository repository;
     private final PriceAdjustmentService priceAdjustmentService;
+    private final ProductService productService;
 
-    public CategoryService(CategoryRepository repository, PriceAdjustmentService priceAdjustmentService) {
+
+    public CategoryService(CategoryRepository repository, PriceAdjustmentService priceAdjustmentService, @Lazy ProductService productService) {
         this.repository = repository;
         this.priceAdjustmentService = priceAdjustmentService;
+        this.productService = productService;
     }
 
     public boolean existsById(Long id) {
@@ -99,6 +104,11 @@ public class CategoryService {
     ) {
         Category category = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id " + id));
+
+         //boolean hasProducts = productRepository.existsByCategory(category);
+        if (productService.isCategoryLinkedToProduct(category)) {
+            throw new BusinessException("Não é possível excluir uma categoria vinculada a produtos.");
+        }
         // if (productRepository.existsByCategory(category)) {
         //     throw new BusinessException("Não é possível excluir uma categoria vinculada a produtos.");
         // }

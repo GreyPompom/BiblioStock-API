@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.BiblioStock.BiblioStock_API.model.Product;
+import com.BiblioStock.BiblioStock_API.model.Category;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
+    boolean existsByCategory(Category category);
     boolean existsByIsbn(String isbn);
     boolean existsBySku(String sku);
     Optional<Product> findByNameIgnoreCase(String name);
