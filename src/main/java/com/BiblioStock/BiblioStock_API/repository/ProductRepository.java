@@ -24,4 +24,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                    "FROM vw_products_per_category " +
                    "WHERE id = :categoryId", nativeQuery = true)
     List<Object[]> findProductsPerCategoryByCategoryId(Long categoryId);
+
+    @Query(value = "SELECT id, name, stock_qty, price, total_value FROM vw_balance", nativeQuery = true)
+    List<Object[]> findBalance();
 }
