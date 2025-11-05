@@ -29,4 +29,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query(value = "SELECT id, name, stock_qty, price, total_value FROM vw_balance", nativeQuery = true)
     List<Object[]> findBalance();
+
+    @Query(value = "SELECT product_id, product_name, category_name, min_qty, stock_qty, deficit FROM vw_products_below_minimum", nativeQuery = true)
+    List<Object[]> findProductsBellowMinimum();
+    
 }

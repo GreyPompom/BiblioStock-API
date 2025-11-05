@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.ProductsBellowMinimumResponseDTO;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 
 @Service
@@ -49,5 +50,34 @@ public class ReportsService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new BalanceResponseDTO(items, totalValue);
+    }
+
+    public List<ProductsBellowMinimumResponseDTO> getProductsBellowMinimum(){
+        List<Object[]> results = productRepository.findProductsBellowMinimum();
+        List<ProductsBellowMinimumResponseDTO> responseList = new ArrayList<>();
+
+        for (Object[] row : results) {
+            // Mapear cada coluna manualmente
+            Long productId = ((Number) row[0]).longValue();
+            String productName = (String) row[1];
+            String categoryName = (String) row[2];
+            BigDecimal minQTD = (BigDecimal) row[3];
+            BigDecimal stockQTD = (BigDecimal) row[4];
+            BigDecimal deficit = (BigDecimal) row[5];
+
+            ProductsBellowMinimumResponseDTO dto = new ProductsBellowMinimumResponseDTO(
+                    productId,
+                    productName,
+                    categoryName,
+                    minQTD,
+                    stockQTD,
+                    deficit
+            );
+
+            responseList.add(dto);
+        }
+
+        return responseList;
+
     }
 }
