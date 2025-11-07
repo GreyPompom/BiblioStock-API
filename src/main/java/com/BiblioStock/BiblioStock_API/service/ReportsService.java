@@ -3,11 +3,14 @@ package com.BiblioStock.BiblioStock_API.service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
+import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 
 @Service
@@ -50,4 +53,5 @@ public class ReportsService {
 
         return new BalanceResponseDTO(items, totalValue);
     }
+
 }
