@@ -125,4 +125,6 @@ public class ProductController {
          @PathVariable Long id) {
         return ResponseEntity.ok(service.findByCategory(id));
     }
+
+    
 }
