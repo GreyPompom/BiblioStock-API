@@ -77,4 +77,10 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         repository.delete(user);
     }
+
+    public Long findByEmail(String email) {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        return user.getId();
+    }
 }

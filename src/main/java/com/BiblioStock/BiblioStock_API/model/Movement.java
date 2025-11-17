@@ -34,8 +34,7 @@ public class Movement {
     private BigDecimal quantity;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "movement_type", nullable = false, columnDefinition = "movement_type")
+    @Column(name = "movement_type", nullable = false) //, columnDefinition = "movement_type"
     private MovementType movementType;
 
     @Column

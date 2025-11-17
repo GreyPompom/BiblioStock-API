@@ -26,16 +26,18 @@ public class PriceAdjustmentService {
 
     private final PriceAdjustmentRepository repository;
     private final JdbcTemplate jdbcTemplate;
+    private final UserService userService;
 
     @Autowired
-    public PriceAdjustmentService(PriceAdjustmentRepository repository, JdbcTemplate jdbcTemplate) {
+    public PriceAdjustmentService(PriceAdjustmentRepository repository, JdbcTemplate jdbcTemplate, UserService userService) {
         this.repository = repository;
         this.jdbcTemplate = jdbcTemplate;
+        this.userService = userService;
     }
 
     @Transactional
     public String applyAdjustment(PriceAdjustmentRequestDTO dto) {
-        Long appliedBy = 7L; // ID fixo para teste
+        Long appliedBy = userService.findByEmail("admin@livraria.com"); // ID fixo para teste
 
         try {
             //arquitetura hexagonal 
@@ -139,7 +141,7 @@ public class PriceAdjustmentService {
                 pa.getScopeType(),
                 pa.getPercent(),
                 pa.getCategory() != null ? pa.getCategory().getId() : null,
-                pa.getCategory() != null ? pa.getCategory().getName() : null, 
+                pa.getCategory() != null ? pa.getCategory().getName() : null,
                 pa.getNote()
         ))
                 .toList();

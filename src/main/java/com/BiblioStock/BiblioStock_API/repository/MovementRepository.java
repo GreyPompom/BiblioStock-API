@@ -1,9 +1,47 @@
 package com.BiblioStock.BiblioStock_API.repository;
 
-import com.BiblioStock.BiblioStock_API.model.Movement;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO;
+import com.BiblioStock.BiblioStock_API.model.Movement;
 
 @Repository
 public interface MovementRepository extends JpaRepository<Movement, Long> {
+
+   @Query("""
+        select new com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO(
+            m.product.id,
+            m.product.name,
+            sum(m.quantity)
+        )
+        from Movement m
+        where m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA
+        group by m.product.id, m.product.name
+        order by sum(m.quantity) desc
+    """)
+    List<ProductSalesSummaryDTO> findProductSalesSummary();
+
+    @Query("""
+        select new com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO(
+            m.product.id,
+            m.product.name,
+            sum(m.quantity)
+        )
+        from Movement m
+        where m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA
+          and m.movementDate >= :startDate
+          and m.movementDate <= :endDate
+        group by m.product.id, m.product.name
+        order by sum(m.quantity) desc
+    """)
+    List<ProductSalesSummaryDTO> findProductSalesSummaryBetween(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }
