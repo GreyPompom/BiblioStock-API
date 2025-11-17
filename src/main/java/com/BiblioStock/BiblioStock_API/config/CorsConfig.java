@@ -10,10 +10,9 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // aplica para todos os endpoints
-                .allowedOrigins("http://localhost:3000") // origem do Vite
+                .allowedOrigins("http://localhost:3000", "http://localhost:5173") 
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
-                .exposedHeaders("*")
-                .allowCredentials(true);
+                .exposedHeaders("*");
     }
 }
