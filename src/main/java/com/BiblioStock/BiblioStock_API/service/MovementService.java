@@ -10,27 +10,32 @@ import com.BiblioStock.BiblioStock_API.model.User;
 import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
 import com.BiblioStock.BiblioStock_API.repository.MovementRepository;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
-import com.BiblioStock.BiblioStock_API.repository.UserRepository;
+import com.BiblioStock.BiblioStock_API.service.UserService;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+
 
 @Service
 public class MovementService {
 
     private final MovementRepository movementRepository;
     private final ProductService productService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     public MovementService(MovementRepository movementRepository,
             ProductService productService,
-            UserRepository userRepository) {
+            UserService userService) {
         this.movementRepository = movementRepository;
         this.productService = productService;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public List<MovementResponseDTO> findAll() {
@@ -42,11 +47,7 @@ public class MovementService {
 
     @Transactional
     public MovementResponseDTO create(MovementRequestDTO dto) {
-        User user = null;
-        if (dto.userId() != null) {
-            user = userRepository.findById(dto.userId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
-        }
+        User user = userService.findByEmail("admin@livraria.com"); // Usuário fixo para teste
 
         // RN020/RN021 - Atualizar estoque
         Product updatedProduct = productService.updateStock(dto.productId(), dto.quantity(), dto.movementType());
@@ -62,5 +63,26 @@ public class MovementService {
                 .build();
         
         return MovementResponseDTO.fromEntity(movementRepository.save(movement));
+    }
+
+     public Page<MovementResponseDTO> getHistory(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            int page,
+            int size
+    ) {
+        if (startDate == null || endDate == null) {
+            throw new BusinessException("Data inicial e final são obrigatórias para o histórico de movimentações.");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new BusinessException("A data inicial não pode ser maior que a data final.");
+        }
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "movementDate"));
+
+        Page<Movement> movementPage =
+                movementRepository.findByMovementDateBetween(startDate, endDate, pageable);
+
+        return movementPage.map(MovementResponseDTO::fromEntity);
     }
 }

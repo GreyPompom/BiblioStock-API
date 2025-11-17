@@ -37,7 +37,7 @@ public class PriceAdjustmentService {
 
     @Transactional
     public String applyAdjustment(PriceAdjustmentRequestDTO dto) {
-        Long appliedBy = userService.findByEmail("admin@livraria.com"); // ID fixo para teste
+        Long appliedBy = userService.getIdByEmail("admin@livraria.com"); // ID fixo para teste
 
         try {
             //arquitetura hexagonal 

@@ -2,6 +2,8 @@ package com.BiblioStock.BiblioStock_API.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -43,5 +45,11 @@ public interface MovementRepository extends JpaRepository<Movement, Long> {
     List<ProductSalesSummaryDTO> findProductSalesSummaryBetween(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
+    );
+
+    Page<Movement> findByMovementDateBetween(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable
     );
 }
