@@ -102,4 +102,9 @@ public class UserController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+    
+    @GetMapping("/getIdByEmail/{email}")
+    public Long getIdByEmail(@PathVariable String email) {
+        return service.getIdByEmail(email);
+    }
 }

@@ -19,9 +19,9 @@ public class ProductAuthorReportService {
     }
 
     @Transactional(readOnly = true)
-public List<ProductResponseDTO> getProductsPerAuthor(Long authorId) {
+    public List<ProductResponseDTO> getProductsPerAuthor(Long authorId) {
     List<Product> products = productRepository.findByAuthorId(authorId);
-
+        
     return products.stream()
             .map(ProductResponseDTO::fromEntity)
             .collect(Collectors.toList());
