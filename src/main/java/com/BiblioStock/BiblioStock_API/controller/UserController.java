@@ -102,4 +102,9 @@ public class UserController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+    @Operation(summary = "Obtém ID do usuário por e-mail", description = "Retorna o ID do usuário correspondente ao e-mail fornecido.")
+    @GetMapping("/getIdByEmail/{email}")
+    public Long getIdByEmail(@PathVariable String email) {
+        return service.getIdByEmail(email);
+    }
 }
