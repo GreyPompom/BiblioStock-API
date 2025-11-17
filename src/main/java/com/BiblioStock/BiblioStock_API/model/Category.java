@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import java.math.BigDecimal;
 
 @Table(name = "categories")
 @Entity
@@ -26,7 +26,7 @@ public class Category {
     private String packagingType;
 
     @Column(name = "default_adjustment_percent", nullable = false)
-    private Double defaultAdjustmentPercent = 0.0;
+    private BigDecimal defaultAdjustmentPercent = BigDecimal.ZERO;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt = OffsetDateTime.now();
