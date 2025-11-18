@@ -75,15 +75,17 @@ public class DashboardService {
     public MovementSummaryDTO getMovementSummary() {
         long total = movementRepository.count();
         long entradas = movementRepository.countByMovementType(MovementType.ENTRADA.name());
-        
-        long saidas = movementRepository.countByMovementType(MovementType.SAIDA.name());   
+
+        long saidas = movementRepository.countByMovementType(MovementType.SAIDA.name());
 
         return new MovementSummaryDTO(total, entradas, saidas);
 
     
-        lic StockValueDTO getTotalStockValue() {
+        
+
+    public StockValueDTO getTotalStockValue() {
         BigDecimal total = productRepository.calculateTotalStockValue();
         return new StockValueDTO(total);
- 
-   }
+
+    }
 }
