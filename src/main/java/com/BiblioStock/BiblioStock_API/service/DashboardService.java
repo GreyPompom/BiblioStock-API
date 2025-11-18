@@ -1,19 +1,20 @@
 package com.BiblioStock.BiblioStock_API.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.BiblioStock.BiblioStock_API.dto.dashboard.DashboardOverviewDTO;
+import com.BiblioStock.BiblioStock_API.dto.dashboard.MovementSummaryDTO;
 import com.BiblioStock.BiblioStock_API.dto.dashboard.ProductCountDTO;
 import com.BiblioStock.BiblioStock_API.dto.dashboard.ProductSummaryDTO;
 import com.BiblioStock.BiblioStock_API.dto.dashboard.StockValueDTO;
 import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
-import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 import com.BiblioStock.BiblioStock_API.repository.CategoryRepository;
 import com.BiblioStock.BiblioStock_API.repository.MovementRepository;
-import com.BiblioStock.BiblioStock_API.dto.dashboard.DashboardOverviewDTO;
-import com.BiblioStock.BiblioStock_API.dto.dashboard.MovementSummaryDTO;
-import com.BiblioStock.BiblioStock_API.dto.dashboard.StockValueDTO;
-import java.math.BigDecimal;
-import java.util.List;
-import org.springframework.stereotype.Service;
+import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 
 @Service
 public class DashboardService {
@@ -79,10 +80,7 @@ public class DashboardService {
         long saidas = movementRepository.countByMovementType(MovementType.SAIDA.name());
 
         return new MovementSummaryDTO(total, entradas, saidas);
-
-    
-        
-
+    }
     public StockValueDTO getTotalStockValue() {
         BigDecimal total = productRepository.calculateTotalStockValue();
         return new StockValueDTO(total);
