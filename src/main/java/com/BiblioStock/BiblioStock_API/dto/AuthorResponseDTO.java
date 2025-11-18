@@ -37,4 +37,14 @@ public record AuthorResponseDTO(
                 0
         );
     }
+
+    public Author toEntity() {
+        Author author = new Author();
+        author.setId(this.id);
+        author.setFullName(this.fullName);
+        author.setNationality(this.nationality);
+        author.setBirthDate(this.birthDate);
+        author.setBiography(this.biography);
+        return author;
+    }
 }
