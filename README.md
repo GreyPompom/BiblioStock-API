@@ -99,6 +99,7 @@ API para gerenciamento completo de estoque de livraria, incluindo produtos, cate
 |--------|-----------|-----------|
 | GET | `/api/products` | Lista produtos (filtros disponíveis) |
 | GET | `/api/products/{id}` | Detalhes do produto |
+| GET | `/api/products/by-category/{id}` | Lista produtos por categoria |
 | POST | `/api/products` | Cria produto |
 | PUT | `/api/products/{id}` | Atualiza produto |
 | DELETE | `/api/products/{id}` | Remove produto |
@@ -109,29 +110,28 @@ API para gerenciamento completo de estoque de livraria, incluindo produtos, cate
 | Método | Endpoint | Descrição |
 |--------|-----------|-----------|
 | GET | `/api/movements` | Lista movimentações (filtros disponíveis) |
-| POST | `/api/movements/entry` | Entrada de estoque |
-| POST | `/api/movements/exit` | Saída de estoque |
+| POST | `/api/movements` | Registra uma nova movimentação |
 
 ---
 
 ### 🔸 Reajustes de Preço
 | Método | Endpoint | Descrição |
 |--------|-----------|-----------|
-| POST | `/price-adjustments/apply` | Reajuste global ou por categoria |
-| GET | `/price-adjustments/history` | Histórico de reajustes |
+| POST | `/api/prices/adjust` | Reajuste global ou por categoria |
+| GET | `/api/prices/history` | Histórico de reajustes |
+| GET | `/api/prices/category-percent` | Lista percentuais de ajuste por categoria |
+| GET | `/api/prices/category-percent/{categoryId}` | Lista o percentual de ajuste de uma categoria específica |
 
 ---
 
 ### 🔸 Relatórios
 | Método | Endpoint | Descrição |
 |--------|-----------|-----------|
-| GET | `/api/reports/low-stock` | Produtos abaixo do mínimo |
-| GET | `/api/reports/categories` | Produtos por categoria |
-| GET | `/api/reports/balance` | Balanço físico e financeiro |
-| GET | `/reports/price-list` | Lista de preços via view |
-| GET | `/reports/below-minimum` | Estoque crítico (view) |
-| GET | `/reports/per-category` | Produtos por categoria (view) |
-| GET | `/reports/top-movements` | Produto com mais entradas e saídas |
+| GET | `/api/reports/products-below-minimum` | Produtos abaixo do mínimo |
+| GET | `/api/reports/products-per-category` | Produtos por categoria |
+| GET | `/api/reports/products-per-category/{categoryId}` | Produtos de uma categoria específica |
+| GET | `/api/reports/balance` | Relatório de balanço de estoque |
+| GET | `/api/reports/products-per-author/{authorId}` | Relatório de balanço de estoque |
 
 ---
 
