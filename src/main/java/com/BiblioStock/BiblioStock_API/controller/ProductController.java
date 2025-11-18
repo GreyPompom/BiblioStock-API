@@ -22,6 +22,8 @@ import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
 import com.BiblioStock.BiblioStock_API.service.ProductService;
 import jakarta.validation.Valid;
+import com.BiblioStock.BiblioStock_API.service.ProductAuthorReportService;
+
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,10 +32,14 @@ import jakarta.validation.Valid;
 public class ProductController {
 
     private final ProductService service;
+    private final ProductAuthorReportService productAuthorReportService;
 
-    public ProductController(ProductService service) {
-        this.service = service;
-    }
+
+    public ProductController(ProductService service,
+                         ProductAuthorReportService productAuthorReportService) {
+    this.service = service;
+    this.productAuthorReportService = productAuthorReportService;
+}
 
     @Operation(summary = "Lista todos os produtos", description = "Retorna uma lista de todos os produtos cadastrados.")
     @ApiResponses(value = {
@@ -125,6 +131,29 @@ public class ProductController {
          @PathVariable Long id) {
         return ResponseEntity.ok(service.findByCategory(id));
     }
+
+        @Operation(
+        summary = "Relatório de Produtos por Autor (RF0XX)",
+        description = "Retorna todos os produtos cadastrados que pertencem a um autor específico, identificado pelo ID do autor."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Relatório de produtos retornado com sucesso",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))
+        ),
+        @ApiResponse(responseCode = "404", description = "Autor não encontrado", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+    })
+    @GetMapping("/reports/products-per-author/{authorId}")
+    public ResponseEntity<List<ProductResponseDTO>> getProductsPerAuthor(
+            @Parameter(description = "ID do autor", example = "1", required = true)
+            @PathVariable Long authorId) {
+
+        List<ProductResponseDTO> list = productAuthorReportService.getProductsPerAuthor(authorId);
+        return ResponseEntity.ok(list);
+    }
+
 
     
 }
