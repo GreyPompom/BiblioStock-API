@@ -1,22 +1,28 @@
 package com.BiblioStock.BiblioStock_API.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentResponseDTO;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
 import com.BiblioStock.BiblioStock_API.service.PriceAdjustmentService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
@@ -41,8 +47,8 @@ public class PriceAdjustmentController {
     })
     @PostMapping("/adjust")
     public ResponseEntity<String> applyAdjustment(
-        @Parameter(description = "DTO com os dados do reajuste", required = true)
-        @Valid @RequestBody PriceAdjustmentRequestDTO dto) {
+            @Parameter(description = "DTO com os dados do reajuste", required = true)
+            @Valid @RequestBody PriceAdjustmentRequestDTO dto) {
         service.applyAdjustment(dto);
         return ResponseEntity.status(201).build();
     }
@@ -50,20 +56,34 @@ public class PriceAdjustmentController {
     @Operation(summary = "Lista histórico de reajustes de preço", description = "Retorna uma lista com todos os reajustes aplicados no sistema.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PriceAdjustment.class))),
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = PriceAdjustment.class))),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor ao buscar histórico", content = @Content)
     })
     @GetMapping("/history")
     public ResponseEntity<List<PriceAdjustment>> getHistory() {
         return ResponseEntity.ok(service.listHistory());
     }
-    
+
     //Retornar percentuais de ajuste de preço por categoria
+    @Operation(summary = "Lista percentuais de ajuste por categoria", description = "Retorna uma lista com os percentuais de ajuste aplicados por categoria.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Percentuais retornados com sucesso",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = PriceAdjustmentResponseDTO.class))),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor ao buscar percentuais", content = @Content)
+    })
     @GetMapping("/category-percent")
     public ResponseEntity<List<PriceAdjustmentResponseDTO>> getCategoriesPercent() {
         return ResponseEntity.ok(service.getAllCategoriesPercent());
     }
 
+    // Retornar percentual de ajuste de preço de uma categoria específica
+    @Operation(summary = "Lista o percentual de ajuste de uma categoria específica", description = "Retorna o percentual de ajuste aplicado para uma categoria específica, informado pelo ID.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Percentual retornado com sucesso",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = PriceAdjustmentResponseDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor ao buscar percentual", content = @Content)
+    })
     @GetMapping("/category-percent/{categoryId}")
     public ResponseEntity<PriceAdjustmentResponseDTO> getCategoryPercent(@PathVariable Long categoryId) {
         return ResponseEntity.ok(service.getCategoryPercent(categoryId));
