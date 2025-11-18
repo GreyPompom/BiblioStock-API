@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO;
 import com.BiblioStock.BiblioStock_API.model.Movement;
+import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
 
 @Repository
 public interface MovementRepository extends JpaRepository<Movement, Long> {
@@ -47,9 +48,21 @@ public interface MovementRepository extends JpaRepository<Movement, Long> {
             @Param("endDate") LocalDateTime endDate
     );
 
+    long count();
+
     Page<Movement> findByMovementDateBetween(
             LocalDateTime startDate,
             LocalDateTime endDate,
             Pageable pageable
     );
+
+     @Query(
+        value = """
+                select count(m.id)
+                from movements m
+                where m.movement_type = cast(:movementType as movement_type)
+                """,
+        nativeQuery = true
+    )
+    long countByMovementType(@Param("movementType") String movementType);
 }
