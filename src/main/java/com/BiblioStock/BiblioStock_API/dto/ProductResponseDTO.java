@@ -1,10 +1,12 @@
 package com.BiblioStock.BiblioStock_API.dto;
 
-import com.BiblioStock.BiblioStock_API.model.Product;
-import java.util.Set;
 import java.math.BigDecimal;
-import com.BiblioStock.BiblioStock_API.model.Author;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.BiblioStock.BiblioStock_API.model.Author;
+import com.BiblioStock.BiblioStock_API.model.Product;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(name = "ProductResponseDTO", description = "DTO de resposta com os dados de um produto")
