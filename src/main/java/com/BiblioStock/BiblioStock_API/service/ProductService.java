@@ -78,6 +78,7 @@ public class ProductService {
 
         Product product = Product.builder()
                 .name(dto.name())
+                .sku(dto.sku())
                 .productType(dto.productType())
                 .price(dto.price())
                 .unit(dto.unit())
@@ -89,12 +90,10 @@ public class ProductService {
                 .category(categoryResponseDTO.toEntity())
                 .authors(authors)
                 .build();
-        System.out.println("=== DEBUG: Salvando produto com " + product.getAuthors().size() + " autores");
+
         product.setPriceWithPercent(getAdjustedPrice(product));
 
-        // Salva o produto primeiro
         Product savedProduct = productRepository.save(product);
-
         // FORÇA o flush para inserir na tabela product_authors
         productRepository.flush();
         return ProductResponseDTO.fromEntity(savedProduct);
@@ -115,6 +114,7 @@ public class ProductService {
         Set<Author> authors = validateAndGetAuthors(dto);
 
         existing.setName(dto.name());
+        existing.setSku(dto.sku());
         existing.setProductType(dto.productType());
         existing.setPrice(dto.price());
         existing.setUnit(dto.unit());
