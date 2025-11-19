@@ -22,13 +22,13 @@ VALUES
 -- 4. Produtos
 INSERT INTO public.products (sku, name, product_type, price, unit, stock_qty, min_qty, max_qty, category_id, publisher, isbn)
 VALUES
-('SKU001', 'O Alquimista', 'Livro', 39.90, 'unidade', 10, 2, 50,
+('SKU001', 'O Alquimista', 'Livro', 39.90, 'unidade', 0, 2, 50,
  (SELECT id FROM public.categories WHERE name='Ficção'),
  'Editora Rocco', '9788576653727'),
-('SKU002', '1984', 'Livro', 45.00, 'unidade', 5, 2, 30,
+('SKU002', '1984', 'Livro', 45.00, 'unidade', 0, 2, 30,
  (SELECT id FROM public.categories WHERE name='Não-Ficção'),
  'Companhia das Letras', '9788535922271'),
-('SKU003', 'O Diário de Anne Frank', 'Livro', 35.50, 'unidade', 8, 1, 25,
+('SKU003', 'O Diário de Anne Frank', 'Livro', 35.50, 'unidade', 0, 1, 25,
  (SELECT id FROM public.categories WHERE name='Não-Ficção'),
  'Editora Record', '9788501109872');
 
