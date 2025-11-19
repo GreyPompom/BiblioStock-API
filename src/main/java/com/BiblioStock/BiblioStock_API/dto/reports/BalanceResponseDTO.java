@@ -1,4 +1,4 @@
-package com.BiblioStock.BiblioStock_API.dto;
+package com.BiblioStock.BiblioStock_API.dto.reports;
 
 import java.math.BigDecimal;
 import java.util.List;
