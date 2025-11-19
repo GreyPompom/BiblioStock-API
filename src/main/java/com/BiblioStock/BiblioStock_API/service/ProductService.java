@@ -139,15 +139,19 @@ public class ProductService {
     private void validateBusinessRules(ProductRequestDTO dto, Long productId) {
         // RN006 - ISBN duplicado
         if (dto.isbn() != null && productRepository.existsByIsbn(dto.isbn())) {
-            if (productId == null) {
+            if (productId == null || !productRepository.findById(productId)
+                    .map(existing -> existing.getIsbn().equals(dto.isbn()))
+                    .orElse(false)) {
                 throw new BusinessException("Já existe um produto com o mesmo ISBN.");
             }
         }
 
         //  - SKU duplicado
         if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
-            if (productId == null) {
-                throw new BusinessException("Já existe um produto com o mesmo sku.");
+            if (productId == null || !productRepository.findById(productId)
+                    .map(existing -> existing.getSku() != null && existing.getSku().equals(dto.sku()))
+                    .orElse(false)) {
+                throw new BusinessException("Já existe um produto com o mesmo SKU.");
             }
         }
 
