@@ -1,12 +1,7 @@
 package com.BiblioStock.BiblioStock_API.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.Parameter;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,21 +12,23 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.BiblioStock.BiblioStock_API.dto.ProductsPerCategoryDTO;
-import com.BiblioStock.BiblioStock_API.service.ProductService;
-import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
-import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
-import com.BiblioStock.BiblioStock_API.dto.ProductSalesReportDTO;
-import com.BiblioStock.BiblioStock_API.dto.ProductsBellowMinimumResponseDTO;
-import com.BiblioStock.BiblioStock_API.service.ReportsService;
-import com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO;
-import java.util.Optional;
-import java.util.Comparator;
-import java.util.Collections;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import com.BiblioStock.BiblioStock_API.dto.ProductsPerCategoryDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.BalanceRequestDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.BalanceResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.MovementsHistoryReportDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.ProductPricesDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.ProductsBellowMinimumResponseDTO;
+import com.BiblioStock.BiblioStock_API.service.ProductService;
+import com.BiblioStock.BiblioStock_API.service.ReportsService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -104,19 +101,33 @@ public class ReportsController {
         return reportsService.getProductsBellowMinimum();
     }
 
-
+    @Operation(summary = "Resumo de Vendas", description = "Retorna um resumo das vendas entre as datas especificadas.")
     @GetMapping("/sales-summary")
     public ResponseEntity<?> getSalesSummary(
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime startDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime endDate
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate
     ) {
         return reportsService.getSalesReport(startDate, endDate)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
-}
 
+     @Operation(summary = "Relatório de preços de produtos",
+               description = "Retorna lista de produtos com preço unitário e preço com reajuste.")
+    @GetMapping("/products-prices")
+    public List<ProductPricesDTO> getProductPricesReport() {
+        return reportsService.getProductPricesReport();
+    }
+
+    @Operation(summary = "Relatório de histórico de movimentações",
+               description = "Retorna o histórico de movimentações por produto, incluindo entradas, saídas, saldo e produtos mais/menos vendidos.")
+    @GetMapping("/movements-history")
+    public MovementsHistoryReportDTO getMovementsHistoryReport() {
+        return reportsService.getMovementsHistoryReport();
+    }
+
+    
+
+}

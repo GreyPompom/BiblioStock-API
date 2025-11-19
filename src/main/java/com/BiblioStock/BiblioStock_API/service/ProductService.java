@@ -1,6 +1,7 @@
 package com.BiblioStock.BiblioStock_API.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -10,9 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 
-
 import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.MovementRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductsPerCategoryDTO;
@@ -20,12 +21,16 @@ import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Author;
 import com.BiblioStock.BiblioStock_API.model.Category;
+import com.BiblioStock.BiblioStock_API.model.Movement;
 import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 import com.BiblioStock.BiblioStock_API.service.SettingsService;
 import com.BiblioStock.BiblioStock_API.service.AuthorService;
 import com.BiblioStock.BiblioStock_API.service.CategoryService;
+import com.BiblioStock.BiblioStock_API.repository.MovementRepository;
+import com.BiblioStock.BiblioStock_API.model.User;
+import com.BiblioStock.BiblioStock_API.service.UserService;
 
 @Service
 public class ProductService {
@@ -34,15 +39,21 @@ public class ProductService {
     private final CategoryService categoryService;
     private final AuthorService authorService;
     private final SettingsService settingsService;
+    private final MovementRepository movementRepository;
+    private final UserService userService;
 
     public ProductService(ProductRepository productRepository,
             @Lazy CategoryService categoryService,
             AuthorService authorService,
-            SettingsService settingsService) {
+            SettingsService settingsService,
+            MovementRepository movementRepository,
+            UserService userService) {
         this.productRepository = productRepository;
         this.categoryService = categoryService;
         this.authorService = authorService;
         this.settingsService = settingsService;
+        this.movementRepository = movementRepository;
+        this.userService = userService;
     }
 
     public List<ProductResponseDTO> findAll() {
@@ -82,7 +93,7 @@ public class ProductService {
                 .productType(dto.productType())
                 .price(dto.price())
                 .unit(dto.unit())
-                .stockQty(dto.stockQty())
+                .stockQty(BigDecimal.ZERO)
                 .minQty(dto.minQty())
                 .maxQty(dto.maxQty())
                 .publisher(dto.publisher())
@@ -98,6 +109,24 @@ public class ProductService {
 
         // FORÇA o flush para inserir na tabela product_authors
         productRepository.flush();
+
+        // REGISTRA ENTRADA DE ESTOQUE INICIAL, SE HOUVER
+        if (savedProduct.getStockQty() != null && savedProduct.getStockQty().compareTo(BigDecimal.ZERO) > 0) {
+            User user = userService.findByEmail("admin@livraria.com"); // ou pegue do contexto/autenticação
+
+            Movement movement = Movement.builder()
+                    .product(savedProduct)
+                    .productNameSnapshot(savedProduct.getName())
+                    .quantity(savedProduct.getStockQty())
+                    .movementType(MovementType.ENTRADA)
+                    .note("Estoque inicial no cadastro do produto")
+                    .movementDate(LocalDateTime.now())
+                    .user(user)
+                    .build();
+
+            movementRepository.save(movement);
+        }
+
         return ProductResponseDTO.fromEntity(savedProduct);
     }
 
@@ -115,11 +144,14 @@ public class ProductService {
 
         Set<Author> authors = validateAndGetAuthors(dto);
 
+        // Guarda o estoque atual antes de alterar
+        BigDecimal oldStockQty = existing.getStockQty() != null ? existing.getStockQty() : BigDecimal.ZERO;
+        BigDecimal newStockQty = dto.stockQty() != null ? dto.stockQty() : BigDecimal.ZERO;
+
         existing.setName(dto.name());
         existing.setProductType(dto.productType());
         existing.setPrice(dto.price());
         existing.setUnit(dto.unit());
-        existing.setStockQty(dto.stockQty());
         existing.setMinQty(dto.minQty());
         existing.setMaxQty(dto.maxQty());
         existing.setPublisher(dto.publisher());
@@ -127,7 +159,43 @@ public class ProductService {
         existing.setCategory(categoryResponseDTO.toEntity());
         existing.setAuthors(authors);
 
-        return ProductResponseDTO.fromEntity(productRepository.save(existing));
+        Product saved = productRepository.save(existing);
+        // Verifica se mudou o estoque
+
+        // SE O ESTOQUE MUDOU, REGISTRA MOVIMENTAÇÃO
+        if (newStockQty.compareTo(oldStockQty) != 0) {
+            BigDecimal diff;
+            MovementType movementType;
+
+            if (newStockQty.compareTo(oldStockQty) > 0) {
+                // aumentou estoque => ENTRADA
+                diff = newStockQty.subtract(oldStockQty);
+                movementType = MovementType.ENTRADA;
+            } else {
+                // diminuiu estoque => SAÍDA
+                diff = oldStockQty.subtract(newStockQty);
+                movementType = MovementType.SAIDA;
+            }
+
+            // só registra se diferença > 0
+            if (diff.compareTo(BigDecimal.ZERO) > 0) {
+                User user = userService.findByEmail("admin@livraria.com"); // depois você troca pelo usuário logado
+
+                Movement movement = Movement.builder()
+                        .product(saved)
+                        .productNameSnapshot(saved.getName())
+                        .quantity(diff)
+                        .movementType(movementType)
+                        .note("Ajuste de estoque via edição do produto")
+                        .movementDate(LocalDateTime.now())
+                        .user(user)
+                        .build();
+
+                movementRepository.save(movement);
+            }
+        }
+
+        return ProductResponseDTO.fromEntity(saved);
     }
 
     @Transactional

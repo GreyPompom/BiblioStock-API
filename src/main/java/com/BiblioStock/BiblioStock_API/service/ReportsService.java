@@ -5,18 +5,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
-import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
-import com.BiblioStock.BiblioStock_API.dto.ProductSalesReportDTO;
-import com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO;
-import com.BiblioStock.BiblioStock_API.dto.ProductsBellowMinimumResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.*;
 import com.BiblioStock.BiblioStock_API.model.Product;
+import com.BiblioStock.BiblioStock_API.service.ProductService;
 import com.BiblioStock.BiblioStock_API.repository.MovementRepository;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 
@@ -25,10 +20,12 @@ public class ReportsService {
 
     private final ProductRepository productRepository;
     private final MovementRepository movementRepository;
+    private final ProductService productService;
 
-    public ReportsService(ProductRepository productRepository, MovementRepository movementRepository) {
+    public ReportsService(ProductRepository productRepository, MovementRepository movementRepository, ProductService productService) {
         this.productRepository = productRepository;
         this.movementRepository = movementRepository;
+        this.productService = productService;
     }
 
     public List<BalanceRequestDTO> getBalance() {
@@ -109,7 +106,7 @@ public class ReportsService {
         ProductSalesSummaryDTO leastSold = summaries.get(summaries.size() - 1);
 
         if (summaries.size() == 1) {
-            leastSold = mostSold; // se só tem um produto, ele é o mais e o menos vendido
+            leastSold = mostSold;
         }
 
         ProductSalesReportDTO report = new ProductSalesReportDTO(
@@ -121,4 +118,41 @@ public class ReportsService {
 
         return Optional.of(report);
     }
+
+   public MovementsHistoryReportDTO getMovementsHistoryReport() {
+        List<MovementHistoryItemDTO> movements = movementRepository.findMovementHistory();
+        List<ProductSalesSummaryDTO> summaries = movementRepository.findProductSalesSummary();
+
+        ProductSalesSummaryDTO mostSold = null;
+        ProductSalesSummaryDTO leastSold = null;
+
+        if (!summaries.isEmpty()) {
+            mostSold = summaries.get(0);
+            leastSold = summaries.get(summaries.size() - 1);
+
+            if (summaries.size() == 1) {
+                leastSold = mostSold;
+            }
+        }
+
+        return new MovementsHistoryReportDTO(movements, mostSold, leastSold);
+    }
+
+    public List<ProductPricesDTO> getProductPricesReport() {
+        List<ProductResponseDTO> products = productService.findAll();
+        List<ProductPricesDTO> productPrices = new ArrayList<>();
+
+        for (ProductResponseDTO product : products) {
+            ProductPricesDTO dto = new ProductPricesDTO(
+                    product.id(),
+                    product.name(),
+                    product.isbn(),
+                    product.price(),
+                    product.priceWithPercent()
+            );
+            productPrices.add(dto);
+        }
+        return productPrices;
+    }
+
 }
