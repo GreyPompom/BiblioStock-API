@@ -3,6 +3,7 @@ package com.BiblioStock.BiblioStock_API.service;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -19,6 +20,8 @@ import com.BiblioStock.BiblioStock_API.repository.PriceAdjustmentRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+import java.util.Comparator;
 
 @Slf4j
 @Service
@@ -135,15 +138,19 @@ public class PriceAdjustmentService {
     }
 
     public List<PriceAdjustmentResponseDTO> getAllCategoriesPercent() {
-        return repository.findByScopeType("CATEGORIA")
-                .stream()
-                .map(pa -> new PriceAdjustmentResponseDTO(
-                pa.getScopeType(),
-                pa.getPercent(),
-                pa.getCategory() != null ? pa.getCategory().getId() : null,
-                pa.getCategory() != null ? pa.getCategory().getName() : null,
-                pa.getNote()
-        ))
+        List<PriceAdjustment> ajustesCategoria = repository.findByScopeType("CATEGORIA");
+
+        Map<Long, PriceAdjustment> ultimoPorCategoria = ajustesCategoria.stream()
+                .filter(pa -> pa.getCategory() != null)
+                .collect(Collectors.toMap(
+                        pa -> pa.getCategory().getId(),
+                        pa -> pa,
+                        (pa1, pa2) -> pa1.getAppliedAt().isAfter(pa2.getAppliedAt()) ? pa1 : pa2
+                ));
+
+        return ultimoPorCategoria.values().stream()
+                .sorted(Comparator.comparing(pa -> pa.getCategory().getName()))
+                .map(PriceAdjustmentResponseDTO::fromEntity)
                 .toList();
     }
 

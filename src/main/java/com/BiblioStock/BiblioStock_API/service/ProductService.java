@@ -45,10 +45,10 @@ public class ProductService {
     private final UserService userService;
 
     public ProductService(ProductRepository productRepository,
-            @Lazy CategoryService categoryService,
+            CategoryService categoryService,
             AuthorService authorService,
             SettingsService settingsService,
-            AuthorRepository authorRepository) {
+            AuthorRepository authorRepository,
             MovementRepository movementRepository,
             UserService userService) {
         this.productRepository = productRepository;
