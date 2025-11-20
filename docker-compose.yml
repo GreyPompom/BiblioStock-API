@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: bibliostock_postgres
+    environment:
+      POSTGRES_DB: bibliostock
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"         # porta 5433 na sua máquina -> 5432 dentro do container
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bibliostock"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .            # mesma pasta onde está o Dockerfile e o pom.xml
+      dockerfile: Dockerfile
+    container_name: bibliostock_api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bibliostock
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  db_data:

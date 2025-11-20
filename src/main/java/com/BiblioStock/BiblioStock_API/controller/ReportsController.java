@@ -19,6 +19,7 @@ import com.BiblioStock.BiblioStock_API.service.ProductService;
 import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.ProductsBellowMinimumResponseDTO;
 import com.BiblioStock.BiblioStock_API.service.ReportsService;
 import java.math.BigDecimal;
 
@@ -103,4 +104,16 @@ public class ReportsController {
         return ResponseEntity.ok(list);
     }
 
+
+    @Operation(summary = "Produtos Abaixo da Quantidade Mínima (RF026)", description = "Exibe ID, nome, quantidade mínima e quantidade atual.")
+    @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Relatório retornado com sucesso",
+        content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = BalanceRequestDTO.class))),
+    @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+    })
+    @GetMapping("/products-below-minimum")
+    public List<ProductsBellowMinimumResponseDTO> getProductsBellowMinimum() {
+        return reportsService.getProductsBellowMinimum();
+    }
 }
