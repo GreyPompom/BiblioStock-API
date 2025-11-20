@@ -10,15 +10,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.MovementHistoryItemDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryDTO;
 import com.BiblioStock.BiblioStock_API.model.Movement;
 import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
 
 @Repository
 public interface MovementRepository extends JpaRepository<Movement, Long> {
 
-   @Query("""
-        select new com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO(
+    @Query("""
+        select new com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryDTO(
             m.product.id,
             m.product.name,
             sum(m.quantity)
@@ -31,7 +32,7 @@ public interface MovementRepository extends JpaRepository<Movement, Long> {
     List<ProductSalesSummaryDTO> findProductSalesSummary();
 
     @Query("""
-        select new com.BiblioStock.BiblioStock_API.dto.ProductSalesSummaryDTO(
+        select new com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryDTO(
             m.product.id,
             m.product.name,
             sum(m.quantity)
@@ -56,13 +57,28 @@ public interface MovementRepository extends JpaRepository<Movement, Long> {
             Pageable pageable
     );
 
-     @Query(
-        value = """
+    @Query(
+            value = """
                 select count(m.id)
                 from movements m
                 where m.movement_type = cast(:movementType as movement_type)
                 """,
-        nativeQuery = true
+            nativeQuery = true
     )
     long countByMovementType(@Param("movementType") String movementType);
+
+    @Query("""
+           select new com.BiblioStock.BiblioStock_API.dto.reports.MovementHistoryItemDTO(
+             m.product.id,
+               m.productNameSnapshot,
+               sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.ENTRADA then m.quantity else 0 end),
+               sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA then m.quantity else 0 end),
+               sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.ENTRADA then m.quantity else 0 end)
+               - sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA then m.quantity else 0 end)
+           )
+           from Movement m
+           group by m.product.id, m.productNameSnapshot order by m.productNameSnapshot asc
+           """)
+    List<MovementHistoryItemDTO> findMovementHistory();
+
 }
