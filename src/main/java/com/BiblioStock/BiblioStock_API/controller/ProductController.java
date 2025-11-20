@@ -33,14 +33,13 @@ public class ProductController {
 
     public ProductController(ProductService service) {
         this.service = service;
+
     }
 
     @Operation(summary = "Lista todos os produtos", description = "Retorna uma lista de todos os produtos cadastrados.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso",
-            content = @Content(mediaType = "application/json",
-                schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> getAll() {
@@ -49,82 +48,67 @@ public class ProductController {
 
     @Operation(summary = "Busca produto por ID", description = "Retorna os dados de um produto específico pelo ID.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Produto encontrado",
-            content = @Content(mediaType = "application/json",
-                schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Produto encontrado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> getById(
-        @Parameter(description = "ID do produto", required = true)
-        @PathVariable Long id) {
+            @Parameter(description = "ID do produto", required = true) @PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @Operation(summary = "Cria um novo produto", description = "Adiciona um novo produto ao sistema.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Produto criado com sucesso",
-            content = @Content(mediaType = "application/json",
-                schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
-        @ApiResponse(responseCode = "409", description = "Conflito - Produto já existe", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+            @ApiResponse(responseCode = "201", description = "Produto criado com sucesso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflito - Produto já existe", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PostMapping
     public ResponseEntity<ProductResponseDTO> create(
-        @Parameter(description = "DTO com os dados do produto", required = true)
-        @Valid @RequestBody ProductRequestDTO dto) {
+            @Parameter(description = "DTO com os dados do produto", required = true) @Valid @RequestBody ProductRequestDTO dto) {
         return ResponseEntity.status(201).body(service.create(dto));
     }
 
     @Operation(summary = "Atualiza um produto existente", description = "Atualiza os dados de um produto pelo ID.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Produto atualizado com sucesso",
-            content = @Content(mediaType = "application/json",
-                schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos ou violação de regra de negócio", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Produto atualizado com sucesso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou violação de regra de negócio", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> update(
-        @Parameter(description = "ID do produto", required = true)
-        @PathVariable Long id,
-        @Parameter(description = "DTO com os dados atualizados", required = true)
-        @Valid @RequestBody ProductRequestDTO dto) {
+            @Parameter(description = "ID do produto", required = true) @PathVariable Long id,
+            @Parameter(description = "DTO com os dados atualizados", required = true) @Valid @RequestBody ProductRequestDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
     @Operation(summary = "Deleta um produto", description = "Remove um produto do sistema pelo ID.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
-        @ApiResponse(responseCode = "400", description = "Não é permitido excluir produto com vínculos", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+            @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Não é permitido excluir produto com vínculos", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-        @Parameter(description = "ID do produto", required = true)
-        @PathVariable Long id) {
+            @Parameter(description = "ID do produto", required = true) @PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Lista produtos por categoria", description = "Retorna todos os produtos pertencentes a uma categoria específica.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de produtos retornada com sucesso",
-            content = @Content(mediaType = "application/json",
-                schema = @Schema(implementation = ProductResponseDTO.class))),
-        @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Lista de produtos retornada com sucesso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor", content = @Content)
     })
     @GetMapping("by-category/{id}")
     public ResponseEntity<List<ProductResponseDTO>> getByCategoryId(
-         @Parameter(description = "ID da categoria", required = true)
-         @PathVariable Long id) {
+            @Parameter(description = "ID da categoria", required = true) @PathVariable Long id) {
         return ResponseEntity.ok(service.findByCategory(id));
     }
 
-    
 }
