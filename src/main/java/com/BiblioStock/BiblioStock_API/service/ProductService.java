@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.context.annotation.Lazy;
 
 import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
@@ -24,6 +24,7 @@ import com.BiblioStock.BiblioStock_API.model.Category;
 import com.BiblioStock.BiblioStock_API.model.Movement;
 import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
+import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 import com.BiblioStock.BiblioStock_API.service.SettingsService;
 import com.BiblioStock.BiblioStock_API.service.AuthorService;
@@ -39,6 +40,7 @@ public class ProductService {
     private final CategoryService categoryService;
     private final AuthorService authorService;
     private final SettingsService settingsService;
+    private final AuthorRepository authorRepository;
     private final MovementRepository movementRepository;
     private final UserService userService;
 
@@ -46,12 +48,14 @@ public class ProductService {
             @Lazy CategoryService categoryService,
             AuthorService authorService,
             SettingsService settingsService,
+            AuthorRepository authorRepository) {
             MovementRepository movementRepository,
             UserService userService) {
         this.productRepository = productRepository;
         this.categoryService = categoryService;
         this.authorService = authorService;
         this.settingsService = settingsService;
+        this.authorRepository = authorRepository;
         this.movementRepository = movementRepository;
         this.userService = userService;
     }
@@ -90,6 +94,7 @@ public class ProductService {
 
         Product product = Product.builder()
                 .name(dto.name())
+                .sku(dto.sku())
                 .productType(dto.productType())
                 .price(dto.price())
                 .unit(dto.unit())
@@ -101,12 +106,10 @@ public class ProductService {
                 .category(categoryResponseDTO.toEntity())
                 .authors(authors)
                 .build();
-        System.out.println("=== DEBUG: Salvando produto com " + product.getAuthors().size() + " autores");
+
         product.setPriceWithPercent(getAdjustedPrice(product));
 
-        // Salva o produto primeiro
         Product savedProduct = productRepository.save(product);
-
         // FORÇA o flush para inserir na tabela product_authors
         productRepository.flush();
 
@@ -149,6 +152,7 @@ public class ProductService {
         BigDecimal newStockQty = dto.stockQty() != null ? dto.stockQty() : BigDecimal.ZERO;
 
         existing.setName(dto.name());
+        existing.setSku(dto.sku());
         existing.setProductType(dto.productType());
         existing.setPrice(dto.price());
         existing.setUnit(dto.unit());
@@ -208,15 +212,19 @@ public class ProductService {
     private void validateBusinessRules(ProductRequestDTO dto, Long productId) {
         // RN006 - ISBN duplicado
         if (dto.isbn() != null && productRepository.existsByIsbn(dto.isbn())) {
-            if (productId == null) {
+            if (productId == null || !productRepository.findById(productId)
+                    .map(existing -> existing.getIsbn().equals(dto.isbn()))
+                    .orElse(false)) {
                 throw new BusinessException("Já existe um produto com o mesmo ISBN.");
             }
         }
 
         //  - SKU duplicado
         if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
-            if (productId == null) {
-                throw new BusinessException("Já existe um produto com o mesmo sku.");
+            if (productId == null || !productRepository.findById(productId)
+                    .map(existing -> existing.getSku() != null && existing.getSku().equals(dto.sku()))
+                    .orElse(false)) {
+                throw new BusinessException("Já existe um produto com o mesmo SKU.");
             }
         }
 
@@ -239,24 +247,14 @@ public class ProductService {
 
     private Set<Author> validateAndGetAuthors(ProductRequestDTO dto) {
         Set<Author> authors = new HashSet<>();
-        System.out.println("=== DEBUG: Buscando autores com IDs: " + dto.authorIds());
         if (dto.productType().equalsIgnoreCase("Livro")) {
             if (dto.authorIds() == null || dto.authorIds().isEmpty()) {
                 throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
             }
 
-            List<AuthorResponseDTO> authorDTOs = authorService.findAllById(dto.authorIds());
-            System.out.println("=== DEBUG: Autores encontrados: " + authorDTOs.size());
+            // BUSCAR ENTIDADES AUTHOR DO REPOSITORY, NÃO CRIAR NOVAS
+            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
 
-            authors = authorDTOs.stream()
-                    .map(AuthorResponseDTO::toEntity)
-                    .collect(Collectors.toSet());
-
-            authors.forEach(author
-                    -> System.out.println("=== DEBUG: Autor - ID: " + author.getId() + ", Nome: " + author.getFullName())
-            );
-
-            // Validação extra
             if (authors.size() != dto.authorIds().size()) {
                 Set<Long> foundIds = authors.stream().map(Author::getId).collect(Collectors.toSet());
                 Set<Long> missingIds = dto.authorIds().stream()

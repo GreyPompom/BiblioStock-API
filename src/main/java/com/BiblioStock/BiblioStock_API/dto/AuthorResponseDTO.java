@@ -1,7 +1,9 @@
 package com.BiblioStock.BiblioStock_API.dto;
 
-import com.BiblioStock.BiblioStock_API.model.Author;
 import java.time.LocalDate;
+
+import com.BiblioStock.BiblioStock_API.model.Author;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(name = "AuthorResponseDTO", description = "DTO de resposta com os dados de um autor")
@@ -20,7 +22,10 @@ public record AuthorResponseDTO(
         LocalDate birthDate,
 
         @Schema(description = "Biografia do autor", example = "Escritora britânica, famosa pela série Harry Potter", required = false)
-        String biography
+        String biography,
+
+        @Schema(description = "Quantidade de livros vinculados ao autor", example = "5")
+        Integer productCount
 ) {
     public static AuthorResponseDTO fromEntity(Author author) {
         return new AuthorResponseDTO(
@@ -28,9 +33,11 @@ public record AuthorResponseDTO(
                 author.getFullName(),
                 author.getNationality(),
                 author.getBirthDate(),
-                author.getBiography()
+                author.getBiography(),
+                0
         );
     }
+
     public Author toEntity() {
         Author author = new Author();
         author.setId(this.id);
