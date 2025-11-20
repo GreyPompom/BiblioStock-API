@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
@@ -54,4 +55,12 @@ public class ReportsService {
         return new BalanceResponseDTO(items, totalValue);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductResponseDTO> getProductsPerAuthor(Long authorId) {
+        List<Product> products = productRepository.findByAuthorId(authorId);
+
+        return products.stream()
+                .map(ProductResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
 }

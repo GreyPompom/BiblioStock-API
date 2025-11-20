@@ -18,6 +18,7 @@ import com.BiblioStock.BiblioStock_API.dto.ProductsPerCategoryDTO;
 import com.BiblioStock.BiblioStock_API.service.ProductService;
 import com.BiblioStock.BiblioStock_API.dto.BalanceRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.BalanceResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
 import com.BiblioStock.BiblioStock_API.service.ReportsService;
 import java.math.BigDecimal;
 
@@ -80,4 +81,26 @@ public class ReportsController {
         BalanceResponseDTO response = new BalanceResponseDTO(balance, totalInventoryValue);
         return ResponseEntity.ok(response);
     }
+     @Operation(
+        summary = "Relatório de Produtos por Autor (RF0XX)",
+        description = "Retorna todos os produtos cadastrados que pertencem a um autor específico, identificado pelo ID do autor."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Relatório de produtos retornado com sucesso",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductResponseDTO.class))
+        ),
+        @ApiResponse(responseCode = "404", description = "Autor não encontrado", content = @Content),
+        @ApiResponse(responseCode ="500", description = "Erro interno no servidor", content = @Content)
+    })
+    @GetMapping("/products-per-author/{authorId}")
+    public ResponseEntity<List<ProductResponseDTO>> getProductsPerAuthor(
+            @Parameter(description = "ID do autor", example = "1", required = true)
+            @PathVariable Long authorId) {
+
+        List<ProductResponseDTO> list = reportsService.getProductsPerAuthor(authorId);
+        return ResponseEntity.ok(list);
+    }
+
 }
