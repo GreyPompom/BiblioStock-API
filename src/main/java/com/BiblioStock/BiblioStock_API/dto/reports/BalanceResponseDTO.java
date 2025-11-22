@@ -11,6 +11,8 @@ public record BalanceResponseDTO(
         List<BalanceRequestDTO> items,
 
         @Schema(description = "Valor total do estoque", example = "15890.45")
-        BigDecimal totalValue
+        BigDecimal totalValue,
+        @Schema(description = "Porcentagem do valor total do estoque", example = "80.5")
+        BigDecimal totalValuePercentage
 
 ) {}

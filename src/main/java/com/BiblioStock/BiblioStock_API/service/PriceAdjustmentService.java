@@ -1,6 +1,7 @@
 package com.BiblioStock.BiblioStock_API.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Types;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentResponseDTO;
 import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
+import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.repository.PriceAdjustmentRepository;
 
 import jakarta.transaction.Transactional;
@@ -160,4 +162,34 @@ public class PriceAdjustmentService {
 
         return PriceAdjustmentResponseDTO.fromEntity(entity);
     }
+
+    public BigDecimal getAdjustedPrice(Product product) {
+        BigDecimal basePrice = product.getPrice();
+        if (basePrice == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal globalPercent = getLatestGlobalAdjustment();
+        if (globalPercent == null) {
+            globalPercent = BigDecimal.ZERO;
+        }
+
+        Long categoryId = product.getCategory() != null ? product.getCategory().getId() : null;
+        BigDecimal categoryPercent = BigDecimal.ZERO;
+        if (categoryId != null) {
+            categoryPercent = getCategoryPercent(categoryId).percent();
+            if (categoryPercent == null) {
+                categoryPercent = BigDecimal.ZERO;
+            }
+        }
+
+        // ex: global 10 + categoria 5 = 15 -> fator = 1.15
+        BigDecimal totalPercent = globalPercent.add(categoryPercent);
+        BigDecimal factor = BigDecimal.ONE.add(
+                totalPercent.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)
+        );
+
+        return basePrice.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    }
+
 }

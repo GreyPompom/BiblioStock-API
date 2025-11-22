@@ -49,8 +49,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findTop4ByOrderByCreatedAtDesc();
 
     @Query("""
-           SELECT COALESCE(SUM(p.stockQty * p.priceWithPercent), 0)
+           SELECT COALESCE(SUM(p.stockQty * p.price), 0)
            FROM Product p
            """)
     BigDecimal calculateTotalStockValue();
+
+     @Query("""
+           SELECT COALESCE(SUM(p.stockQty * p.priceWithPercent), 0)
+           FROM Product p
+           """)
+    BigDecimal calculateTotalStockValuePercentage();
 }

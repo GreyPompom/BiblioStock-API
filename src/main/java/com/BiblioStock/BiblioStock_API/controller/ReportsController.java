@@ -85,7 +85,7 @@ public class ReportsController {
         List<BalanceRequestDTO> balance = reportsService.getBalance();
         BigDecimal totalInventoryValue = reportsService.getTotalInventoryValue();
 
-        BalanceResponseDTO response = new BalanceResponseDTO(balance, totalInventoryValue);
+        BalanceResponseDTO response = new BalanceResponseDTO(balance, totalInventoryValue, BigDecimal.ZERO);
         return ResponseEntity.ok(response);
     }
 
@@ -128,6 +128,9 @@ public class ReportsController {
         return reportsService.getMovementsHistoryReport();
     }
 
+    public BigDecimal getGlobalPriceAdjustment() {
+        return reportsService.getGlobalPriceAdjustment();
+    }
     
 
 }

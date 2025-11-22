@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/prices")
@@ -87,5 +88,17 @@ public class PriceAdjustmentController {
     @GetMapping("/category-percent/{categoryId}")
     public ResponseEntity<PriceAdjustmentResponseDTO> getCategoryPercent(@PathVariable Long categoryId) {
         return ResponseEntity.ok(service.getCategoryPercent(categoryId));
+    }
+
+    @Operation(summary = "Retorna o percentual de ajuste global", description = "Retorna o percentual de ajuste aplicado globalmente no sistema.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Percentual retornado com sucesso",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = PriceAdjustmentResponseDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor ao buscar percentual", content = @Content)
+    })
+    @GetMapping("/global-percent")
+    public BigDecimal getGlobalPercent() {
+        return service.getLatestGlobalAdjustment();
     }
 }

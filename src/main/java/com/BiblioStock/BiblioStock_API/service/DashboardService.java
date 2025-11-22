@@ -81,9 +81,16 @@ public class DashboardService {
 
         return new MovementSummaryDTO(total, entradas, saidas);
     }
+
     public StockValueDTO getTotalStockValue() {
         BigDecimal total = productRepository.calculateTotalStockValue();
-        return new StockValueDTO(total);
+        BigDecimal totalPercentage = productRepository.calculateTotalStockValuePercentage();
+        Long totalProducts = productRepository.count();
+        
+        StockValueDTO stockValueDTO = new StockValueDTO(total, totalPercentage, totalProducts);
+        
+        return stockValueDTO;
 
     }
+
 }

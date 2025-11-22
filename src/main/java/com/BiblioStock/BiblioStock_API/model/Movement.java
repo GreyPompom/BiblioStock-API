@@ -6,7 +6,10 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.hibernate.type.SqlTypes;
 
 @Entity
@@ -34,7 +37,8 @@ public class Movement {
     private BigDecimal quantity;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "movement_type", nullable = false) //, columnDefinition = "movement_type"
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "movement_type", nullable = false)
     private MovementType movementType;
 
     @Column

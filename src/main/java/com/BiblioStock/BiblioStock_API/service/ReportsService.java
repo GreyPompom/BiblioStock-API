@@ -56,8 +56,8 @@ public class ReportsService {
         BigDecimal totalValue = items.stream()
                 .map(BalanceRequestDTO::totalValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return new BalanceResponseDTO(items, totalValue);
+        
+        return new BalanceResponseDTO(items, totalValue, BigDecimal.ZERO);
     }
 
     public List<ProductsBellowMinimumResponseDTO> getProductsBellowMinimum() {
@@ -93,9 +93,23 @@ public class ReportsService {
         List<ProductSalesSummaryDTO> summaries;
 
         if (startDate != null && endDate != null) {
-            summaries = movementRepository.findProductSalesSummaryBetween(startDate, endDate);
+            summaries = movementRepository.findProductSalesSummaryBetweenNative(startDate, endDate)
+                    .stream()
+                    .map(p -> new ProductSalesSummaryDTO(
+                            p.getProductId(),
+                            p.getProductName(),
+                            p.getTotalQuantity()
+                    ))
+                    .toList();
         } else {
-            summaries = movementRepository.findProductSalesSummary();
+            summaries =  movementRepository.findProductSalesSummaryNative()
+                    .stream()
+                    .map(p -> new ProductSalesSummaryDTO(
+                            p.getProductId(),
+                            p.getProductName(),
+                            p.getTotalQuantity()
+                    ))
+                    .toList();
         }
 
         if (summaries.isEmpty()) {
@@ -120,8 +134,26 @@ public class ReportsService {
     }
 
    public MovementsHistoryReportDTO getMovementsHistoryReport() {
-        List<MovementHistoryItemDTO> movements = movementRepository.findMovementHistory();
-        List<ProductSalesSummaryDTO> summaries = movementRepository.findProductSalesSummary();
+        List<MovementHistoryItemDTO> movements =
+                movementRepository.findMovementHistoryNative()
+                        .stream()
+                        .map(p -> new MovementHistoryItemDTO(
+                                p.getProductId(),
+                                p.getProductNameSnapshot(),
+                                p.getTotalEntrada(),
+                                p.getTotalSaida(),
+                                p.getSaldo()
+                        ))
+                        .toList();
+         List<ProductSalesSummaryDTO> summaries =
+            movementRepository.findProductSalesSummaryNative()
+                    .stream()
+                    .map(p -> new ProductSalesSummaryDTO(
+                            p.getProductId(),
+                            p.getProductName(),
+                            p.getTotalQuantity()
+                    ))
+                    .toList();
 
         ProductSalesSummaryDTO mostSold = null;
         ProductSalesSummaryDTO leastSold = null;
@@ -154,5 +186,5 @@ public class ReportsService {
         }
         return productPrices;
     }
-
+    
 }

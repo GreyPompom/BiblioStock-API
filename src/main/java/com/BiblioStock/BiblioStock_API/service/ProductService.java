@@ -98,7 +98,7 @@ public class ProductService {
                 .productType(dto.productType())
                 .price(dto.price())
                 .unit(dto.unit())
-                .stockQty(BigDecimal.ZERO)
+                .stockQty(dto.stockQty())
                 .minQty(dto.minQty())
                 .maxQty(dto.maxQty())
                 .publisher(dto.publisher())
@@ -110,17 +110,17 @@ public class ProductService {
         product.setPriceWithPercent(getAdjustedPrice(product));
 
         Product savedProduct = productRepository.save(product);
-        // FORÇA o flush para inserir na tabela product_authors
-        productRepository.flush();
 
-        // REGISTRA ENTRADA DE ESTOQUE INICIAL, SE HOUVER
+        productRepository.flush();
+        
         if (savedProduct.getStockQty() != null && savedProduct.getStockQty().compareTo(BigDecimal.ZERO) > 0) {
-            User user = userService.findByEmail("admin@livraria.com"); // ou pegue do contexto/autenticação
+
+            User user = userService.findByEmail("admin@livraria.com"); 
 
             Movement movement = Movement.builder()
                     .product(savedProduct)
                     .productNameSnapshot(savedProduct.getName())
-                    .quantity(savedProduct.getStockQty())
+                    .quantity(savedProduct.getStockQty()) 
                     .movementType(MovementType.ENTRADA)
                     .note("Estoque inicial no cadastro do produto")
                     .movementDate(LocalDateTime.now())
@@ -162,7 +162,8 @@ public class ProductService {
         existing.setIsbn(dto.isbn());
         existing.setCategory(categoryResponseDTO.toEntity());
         existing.setAuthors(authors);
-
+        existing.setStockQty(dto.stockQty());
+        existing.setPriceWithPercent(getAdjustedPrice(existing));
         Product saved = productRepository.save(existing);
         // Verifica se mudou o estoque
 

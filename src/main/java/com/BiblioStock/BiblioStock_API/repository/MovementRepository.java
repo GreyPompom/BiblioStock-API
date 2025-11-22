@@ -2,49 +2,53 @@ package com.BiblioStock.BiblioStock_API.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.BiblioStock.BiblioStock_API.dto.reports.MovementHistoryItemDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.MovementHistoryItemProjection;
 import com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryDTO;
+import com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryProjection;
 import com.BiblioStock.BiblioStock_API.model.Movement;
-import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
 
 @Repository
 public interface MovementRepository extends JpaRepository<Movement, Long> {
 
-    @Query("""
-        select new com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryDTO(
-            m.product.id,
-            m.product.name,
-            sum(m.quantity)
-        )
-        from Movement m
-        where m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA
-        group by m.product.id, m.product.name
+    @Query(value = """
+        select 
+            m.product_id as productId,
+            p.name as productName,
+            sum(m.quantity) as totalQuantity
+        from movements m
+        join products p on p.id = m.product_id
+        where m.movement_type = 'SAIDA'
+        group by m.product_id, p.name
         order by sum(m.quantity) desc
-    """)
-    List<ProductSalesSummaryDTO> findProductSalesSummary();
+        """,
+            nativeQuery = true)
+    List<ProductSalesSummaryProjection> findProductSalesSummaryNative();
 
-    @Query("""
-        select new com.BiblioStock.BiblioStock_API.dto.reports.ProductSalesSummaryDTO(
-            m.product.id,
-            m.product.name,
-            sum(m.quantity)
-        )
-        from Movement m
-        where m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA
-          and m.movementDate >= :startDate
-          and m.movementDate <= :endDate
-        group by m.product.id, m.product.name
+// produtos mais vendidos entre datas
+    @Query(value = """
+        select 
+            m.product_id as productId,
+            p.name as productName,
+            sum(m.quantity) as totalQuantity
+        from movements m
+        join products p on p.id = m.product_id
+        where m.movement_type = 'SAIDA'
+          and m.movement_date >= :startDate
+          and m.movement_date <= :endDate
+        group by m.product_id, p.name
         order by sum(m.quantity) desc
-    """)
-    List<ProductSalesSummaryDTO> findProductSalesSummaryBetween(
+        """,
+            nativeQuery = true)
+    List<ProductSalesSummaryProjection> findProductSalesSummaryBetweenNative(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
@@ -67,18 +71,20 @@ public interface MovementRepository extends JpaRepository<Movement, Long> {
     )
     long countByMovementType(@Param("movementType") String movementType);
 
-    @Query("""
-           select new com.BiblioStock.BiblioStock_API.dto.reports.MovementHistoryItemDTO(
-             m.product.id,
-               m.productNameSnapshot,
-               sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.ENTRADA then m.quantity else 0 end),
-               sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA then m.quantity else 0 end),
-               sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.ENTRADA then m.quantity else 0 end)
-               - sum(case when m.movementType = com.BiblioStock.BiblioStock_API.model.enums.MovementType.SAIDA then m.quantity else 0 end)
-           )
-           from Movement m
-           group by m.product.id, m.productNameSnapshot order by m.productNameSnapshot asc
-           """)
-    List<MovementHistoryItemDTO> findMovementHistory();
-
+    @Query(value = """
+        select 
+            m.product_id as productId,
+            m.product_name_snapshot as productNameSnapshot,
+            sum(case when m.movement_type = 'ENTRADA' then m.quantity else 0 end) as totalEntrada,
+            sum(case when m.movement_type = 'SAIDA' then m.quantity else 0 end) as totalSaida,
+            (
+              sum(case when m.movement_type = 'ENTRADA' then m.quantity else 0 end)
+              - sum(case when m.movement_type = 'SAIDA' then m.quantity else 0 end)
+            ) as saldo
+        from movements m
+        group by m.product_id, m.product_name_snapshot
+        order by m.product_name_snapshot asc
+        """,
+            nativeQuery = true)
+    List<MovementHistoryItemProjection> findMovementHistoryNative();
 }
