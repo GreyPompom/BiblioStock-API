@@ -85,7 +85,7 @@ public class ReportsController {
         List<BalanceRequestDTO> balance = reportsService.getBalance();
         BigDecimal totalInventoryValue = reportsService.getTotalInventoryValue();
 
-        BalanceResponseDTO response = new BalanceResponseDTO(balance, totalInventoryValue);
+        BalanceResponseDTO response = new BalanceResponseDTO(balance, totalInventoryValue, BigDecimal.ZERO);
         return ResponseEntity.ok(response);
     }
 
@@ -114,20 +114,18 @@ public class ReportsController {
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-     @Operation(summary = "Relatório de preços de produtos",
-               description = "Retorna lista de produtos com preço unitário e preço com reajuste.")
+    @Operation(summary = "Relatório de preços de produtos",
+            description = "Retorna lista de produtos com preço unitário e preço com reajuste.")
     @GetMapping("/products-prices")
     public List<ProductPricesDTO> getProductPricesReport() {
         return reportsService.getProductPricesReport();
     }
 
     @Operation(summary = "Relatório de histórico de movimentações",
-               description = "Retorna o histórico de movimentações por produto, incluindo entradas, saídas, saldo e produtos mais/menos vendidos.")
+            description = "Retorna o histórico de movimentações por produto, incluindo entradas, saídas, saldo e produtos mais/menos vendidos.")
     @GetMapping("/movements-history")
     public MovementsHistoryReportDTO getMovementsHistoryReport() {
         return reportsService.getMovementsHistoryReport();
     }
-
-    
 
 }
