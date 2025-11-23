@@ -1,17 +1,17 @@
 package com.BiblioStock.BiblioStock_API.service;
 
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.BiblioStock.BiblioStock_API.dto.AuthorRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
 import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Author;
 import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import java.util.List;
 
 @Service
 public class AuthorService {
@@ -25,20 +25,53 @@ public class AuthorService {
     public List<AuthorResponseDTO> findAll() {
         return repository.findAll()
                 .stream()
-                .map(AuthorResponseDTO::fromEntity)
+                .map(author -> {
+                    Integer count = repository.countProductsByAuthor(author.getId());
+                    AuthorResponseDTO base = AuthorResponseDTO.fromEntity(author);
+                    return new AuthorResponseDTO(
+                            base.id(),
+                            base.fullName(),
+                            base.nationality(),
+                            base.birthDate(),
+                            base.biography(),
+                            count
+                    );
+                })
                 .toList();
     }
 
     public AuthorResponseDTO findById(Long id) {
         Author author = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Autor não encontrado com id " + id));
-        return AuthorResponseDTO.fromEntity(author);
+
+        Integer count = repository.countProductsByAuthor(id);
+
+        AuthorResponseDTO base = AuthorResponseDTO.fromEntity(author);
+        return new AuthorResponseDTO(
+                base.id(),
+                base.fullName(),
+                base.nationality(),
+                base.birthDate(),
+                base.biography(),
+                count
+        );
     }
 
     public List<AuthorResponseDTO> findAllById(Set<Long> authorIds) {
         return repository.findAllById(authorIds)
                 .stream()
-                .map(AuthorResponseDTO::fromEntity)
+                .map(author -> {
+                    Integer count = repository.countProductsByAuthor(author.getId());
+                    AuthorResponseDTO base = AuthorResponseDTO.fromEntity(author);
+                    return new AuthorResponseDTO(
+                            base.id(),
+                            base.fullName(),
+                            base.nationality(),
+                            base.birthDate(),
+                            base.biography(),
+                            count
+                    );
+                })
                 .toList();
     }
 
@@ -55,7 +88,17 @@ public class AuthorService {
                 .biography(dto.biography())
                 .build();
 
-        return AuthorResponseDTO.fromEntity(repository.save(author));
+        Author saved = repository.save(author);
+        int count = 0;
+
+        return new AuthorResponseDTO(
+                saved.getId(),
+                saved.getFullName(),
+                saved.getNationality(),
+                saved.getBirthDate(),
+                saved.getBiography(),
+                count
+        );
     }
 
     @Transactional
@@ -68,7 +111,16 @@ public class AuthorService {
         author.setBirthDate(dto.birthDate());
         author.setBiography(dto.biography());
 
-        return AuthorResponseDTO.fromEntity(repository.save(author));
+        Integer count = repository.countProductsByAuthor(id);
+        AuthorResponseDTO base = AuthorResponseDTO.fromEntity(author);
+        return new AuthorResponseDTO(
+                base.id(),
+                base.fullName(),
+                base.nationality(),
+                base.birthDate(),
+                base.biography(),
+                count
+        );
     }
 
     @Transactional
@@ -77,12 +129,11 @@ public class AuthorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Autor não encontrado com id " + id));
 
         // Regra de negócio: não pode excluir se tiver livros associados
-        boolean hasBooks = false; // aqui entraria a verificação real, ex: productRepository.existsByAuthor(author)
-        if (hasBooks) {
+        boolean hasProducts = false; // aqui entraria a verificação real, ex: productRepository.existsByAuthor(author)
+        if (hasProducts) {
             throw new BusinessException("Não é possível excluir um autor que possui livros vinculados.");
         }
 
         repository.delete(author);
     }
 }
-

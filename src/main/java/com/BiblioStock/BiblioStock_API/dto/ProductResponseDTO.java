@@ -1,15 +1,17 @@
 package com.BiblioStock.BiblioStock_API.dto;
 
-import com.BiblioStock.BiblioStock_API.model.Product;
-import java.util.Set;
 import java.math.BigDecimal;
-import com.BiblioStock.BiblioStock_API.model.Author;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.BiblioStock.BiblioStock_API.model.Author;
+import com.BiblioStock.BiblioStock_API.model.Product;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(name = "ProductResponseDTO", description = "DTO de resposta com os dados de um produto")
 public record ProductResponseDTO(
-         @Schema(description = "ID do produto", example = "1", required = true)
+        @Schema(description = "ID do produto", example = "1", required = true)
         Long id,
 
         @Schema(description = "Nome do produto", example = "Harry Potter e a Pedra Filosofal", required = true)
@@ -39,8 +41,10 @@ public record ProductResponseDTO(
         @Schema(description = "Código ISBN do produto", example = "978-3-16-148410-0", required = true)
         String isbn,
 
-        @Schema(description = "Categoria do produto", required = true)
+        @Schema(description = "SKU do produto", required = true)
         String sku,
+
+        @Schema(description = "Categoria do produto", required = true)
         CategoryResponseDTO category,
 
         @Schema(description = "Autores do produto", required = true)

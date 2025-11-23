@@ -1,18 +1,19 @@
 package com.BiblioStock.BiblioStock_API.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.context.annotation.Lazy;
-
 
 import com.BiblioStock.BiblioStock_API.dto.AuthorResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.CategoryResponseDTO;
+import com.BiblioStock.BiblioStock_API.dto.MovementRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductRequestDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductResponseDTO;
 import com.BiblioStock.BiblioStock_API.dto.ProductsPerCategoryDTO;
@@ -20,12 +21,17 @@ import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.Author;
 import com.BiblioStock.BiblioStock_API.model.Category;
+import com.BiblioStock.BiblioStock_API.model.Movement;
 import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.model.enums.MovementType;
+import com.BiblioStock.BiblioStock_API.repository.AuthorRepository;
 import com.BiblioStock.BiblioStock_API.repository.ProductRepository;
 import com.BiblioStock.BiblioStock_API.service.SettingsService;
 import com.BiblioStock.BiblioStock_API.service.AuthorService;
 import com.BiblioStock.BiblioStock_API.service.CategoryService;
+import com.BiblioStock.BiblioStock_API.repository.MovementRepository;
+import com.BiblioStock.BiblioStock_API.model.User;
+import com.BiblioStock.BiblioStock_API.service.UserService;
 
 @Service
 public class ProductService {
@@ -34,15 +40,24 @@ public class ProductService {
     private final CategoryService categoryService;
     private final AuthorService authorService;
     private final SettingsService settingsService;
+    private final AuthorRepository authorRepository;
+    private final MovementRepository movementRepository;
+    private final UserService userService;
 
     public ProductService(ProductRepository productRepository,
-            @Lazy CategoryService categoryService,
+            CategoryService categoryService,
             AuthorService authorService,
-            SettingsService settingsService) {
+            SettingsService settingsService,
+            AuthorRepository authorRepository,
+            MovementRepository movementRepository,
+            UserService userService) {
         this.productRepository = productRepository;
         this.categoryService = categoryService;
         this.authorService = authorService;
         this.settingsService = settingsService;
+        this.authorRepository = authorRepository;
+        this.movementRepository = movementRepository;
+        this.userService = userService;
     }
 
     public List<ProductResponseDTO> findAll() {
@@ -79,6 +94,7 @@ public class ProductService {
 
         Product product = Product.builder()
                 .name(dto.name())
+                .sku(dto.sku())
                 .productType(dto.productType())
                 .price(dto.price())
                 .unit(dto.unit())
@@ -90,14 +106,30 @@ public class ProductService {
                 .category(categoryResponseDTO.toEntity())
                 .authors(authors)
                 .build();
-        System.out.println("=== DEBUG: Salvando produto com " + product.getAuthors().size() + " autores");
+
         product.setPriceWithPercent(getAdjustedPrice(product));
 
-        // Salva o produto primeiro
         Product savedProduct = productRepository.save(product);
 
-        // FORÇA o flush para inserir na tabela product_authors
         productRepository.flush();
+        
+        if (savedProduct.getStockQty() != null && savedProduct.getStockQty().compareTo(BigDecimal.ZERO) > 0) {
+
+            User user = userService.findByEmail("admin@livraria.com"); 
+
+            Movement movement = Movement.builder()
+                    .product(savedProduct)
+                    .productNameSnapshot(savedProduct.getName())
+                    .quantity(savedProduct.getStockQty()) 
+                    .movementType(MovementType.ENTRADA)
+                    .note("Estoque inicial no cadastro do produto")
+                    .movementDate(LocalDateTime.now())
+                    .user(user)
+                    .build();
+
+            movementRepository.save(movement);
+        }
+
         return ProductResponseDTO.fromEntity(savedProduct);
     }
 
@@ -115,19 +147,60 @@ public class ProductService {
 
         Set<Author> authors = validateAndGetAuthors(dto);
 
+        // Guarda o estoque atual antes de alterar
+        BigDecimal oldStockQty = existing.getStockQty() != null ? existing.getStockQty() : BigDecimal.ZERO;
+        BigDecimal newStockQty = dto.stockQty() != null ? dto.stockQty() : BigDecimal.ZERO;
+
         existing.setName(dto.name());
+        existing.setSku(dto.sku());
         existing.setProductType(dto.productType());
         existing.setPrice(dto.price());
         existing.setUnit(dto.unit());
-        existing.setStockQty(dto.stockQty());
         existing.setMinQty(dto.minQty());
         existing.setMaxQty(dto.maxQty());
         existing.setPublisher(dto.publisher());
         existing.setIsbn(dto.isbn());
         existing.setCategory(categoryResponseDTO.toEntity());
         existing.setAuthors(authors);
+        existing.setStockQty(dto.stockQty());
+        existing.setPriceWithPercent(getAdjustedPrice(existing));
+        Product saved = productRepository.save(existing);
+        // Verifica se mudou o estoque
 
-        return ProductResponseDTO.fromEntity(productRepository.save(existing));
+        // SE O ESTOQUE MUDOU, REGISTRA MOVIMENTAÇÃO
+        if (newStockQty.compareTo(oldStockQty) != 0) {
+            BigDecimal diff;
+            MovementType movementType;
+
+            if (newStockQty.compareTo(oldStockQty) > 0) {
+                // aumentou estoque => ENTRADA
+                diff = newStockQty.subtract(oldStockQty);
+                movementType = MovementType.ENTRADA;
+            } else {
+                // diminuiu estoque => SAÍDA
+                diff = oldStockQty.subtract(newStockQty);
+                movementType = MovementType.SAIDA;
+            }
+
+            // só registra se diferença > 0
+            if (diff.compareTo(BigDecimal.ZERO) > 0) {
+                User user = userService.findByEmail("admin@livraria.com"); // depois você troca pelo usuário logado
+
+                Movement movement = Movement.builder()
+                        .product(saved)
+                        .productNameSnapshot(saved.getName())
+                        .quantity(diff)
+                        .movementType(movementType)
+                        .note("Ajuste de estoque via edição do produto")
+                        .movementDate(LocalDateTime.now())
+                        .user(user)
+                        .build();
+
+                movementRepository.save(movement);
+            }
+        }
+
+        return ProductResponseDTO.fromEntity(saved);
     }
 
     @Transactional
@@ -140,15 +213,19 @@ public class ProductService {
     private void validateBusinessRules(ProductRequestDTO dto, Long productId) {
         // RN006 - ISBN duplicado
         if (dto.isbn() != null && productRepository.existsByIsbn(dto.isbn())) {
-            if (productId == null) {
+            if (productId == null || !productRepository.findById(productId)
+                    .map(existing -> existing.getIsbn().equals(dto.isbn()))
+                    .orElse(false)) {
                 throw new BusinessException("Já existe um produto com o mesmo ISBN.");
             }
         }
 
         //  - SKU duplicado
         if (dto.sku() != null && productRepository.existsBySku(dto.sku())) {
-            if (productId == null) {
-                throw new BusinessException("Já existe um produto com o mesmo sku.");
+            if (productId == null || !productRepository.findById(productId)
+                    .map(existing -> existing.getSku() != null && existing.getSku().equals(dto.sku()))
+                    .orElse(false)) {
+                throw new BusinessException("Já existe um produto com o mesmo SKU.");
             }
         }
 
@@ -171,24 +248,14 @@ public class ProductService {
 
     private Set<Author> validateAndGetAuthors(ProductRequestDTO dto) {
         Set<Author> authors = new HashSet<>();
-        System.out.println("=== DEBUG: Buscando autores com IDs: " + dto.authorIds());
         if (dto.productType().equalsIgnoreCase("Livro")) {
             if (dto.authorIds() == null || dto.authorIds().isEmpty()) {
                 throw new BusinessException("Um produto do tipo 'Livro' deve possuir pelo menos um autor.");
             }
 
-            List<AuthorResponseDTO> authorDTOs = authorService.findAllById(dto.authorIds());
-            System.out.println("=== DEBUG: Autores encontrados: " + authorDTOs.size());
+            // BUSCAR ENTIDADES AUTHOR DO REPOSITORY, NÃO CRIAR NOVAS
+            authors = new HashSet<>(authorRepository.findAllById(dto.authorIds()));
 
-            authors = authorDTOs.stream()
-                    .map(AuthorResponseDTO::toEntity)
-                    .collect(Collectors.toSet());
-
-            authors.forEach(author
-                    -> System.out.println("=== DEBUG: Autor - ID: " + author.getId() + ", Nome: " + author.getFullName())
-            );
-
-            // Validação extra
             if (authors.size() != dto.authorIds().size()) {
                 Set<Long> foundIds = authors.stream().map(Author::getId).collect(Collectors.toSet());
                 Set<Long> missingIds = dto.authorIds().stream()

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
 
 public record PriceAdjustmentResponseDTO(
+        Long id,
         String scopeType,
         BigDecimal percent,
         Long categoryId,
@@ -13,6 +14,7 @@ public record PriceAdjustmentResponseDTO(
 ) {
     public static PriceAdjustmentResponseDTO fromEntity(PriceAdjustment entity) {
         return new PriceAdjustmentResponseDTO(
+                entity.getId(),
                 entity.getScopeType(),
                 entity.getPercent(),
                 entity.getCategory() != null ? entity.getCategory().getId() : null,

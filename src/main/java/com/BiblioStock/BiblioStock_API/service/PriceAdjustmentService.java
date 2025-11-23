@@ -1,8 +1,10 @@
 package com.BiblioStock.BiblioStock_API.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Types;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -15,10 +17,13 @@ import com.BiblioStock.BiblioStock_API.dto.PriceAdjustmentResponseDTO;
 import com.BiblioStock.BiblioStock_API.exception.BusinessException;
 import com.BiblioStock.BiblioStock_API.exception.ResourceNotFoundException;
 import com.BiblioStock.BiblioStock_API.model.PriceAdjustment;
+import com.BiblioStock.BiblioStock_API.model.Product;
 import com.BiblioStock.BiblioStock_API.repository.PriceAdjustmentRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+import java.util.Comparator;
 
 @Slf4j
 @Service
@@ -26,16 +31,18 @@ public class PriceAdjustmentService {
 
     private final PriceAdjustmentRepository repository;
     private final JdbcTemplate jdbcTemplate;
+    private final UserService userService;
 
     @Autowired
-    public PriceAdjustmentService(PriceAdjustmentRepository repository, JdbcTemplate jdbcTemplate) {
+    public PriceAdjustmentService(PriceAdjustmentRepository repository, JdbcTemplate jdbcTemplate, UserService userService) {
         this.repository = repository;
         this.jdbcTemplate = jdbcTemplate;
+        this.userService = userService;
     }
 
     @Transactional
     public String applyAdjustment(PriceAdjustmentRequestDTO dto) {
-        Long appliedBy = 7L; // ID fixo para teste
+        Long appliedBy = userService.getIdByEmail("admin@livraria.com"); // ID fixo para teste
 
         try {
             //arquitetura hexagonal 
@@ -133,15 +140,19 @@ public class PriceAdjustmentService {
     }
 
     public List<PriceAdjustmentResponseDTO> getAllCategoriesPercent() {
-        return repository.findByScopeType("CATEGORIA")
-                .stream()
-                .map(pa -> new PriceAdjustmentResponseDTO(
-                pa.getScopeType(),
-                pa.getPercent(),
-                pa.getCategory() != null ? pa.getCategory().getId() : null,
-                pa.getCategory() != null ? pa.getCategory().getName() : null, 
-                pa.getNote()
-        ))
+        List<PriceAdjustment> ajustesCategoria = repository.findByScopeType("CATEGORIA");
+
+        Map<Long, PriceAdjustment> ultimoPorCategoria = ajustesCategoria.stream()
+                .filter(pa -> pa.getCategory() != null)
+                .collect(Collectors.toMap(
+                        pa -> pa.getCategory().getId(),
+                        pa -> pa,
+                        (pa1, pa2) -> pa1.getAppliedAt().isAfter(pa2.getAppliedAt()) ? pa1 : pa2
+                ));
+
+        return ultimoPorCategoria.values().stream()
+                .sorted(Comparator.comparing(pa -> pa.getCategory().getName()))
+                .map(PriceAdjustmentResponseDTO::fromEntity)
                 .toList();
     }
 
@@ -151,4 +162,34 @@ public class PriceAdjustmentService {
 
         return PriceAdjustmentResponseDTO.fromEntity(entity);
     }
+
+    public BigDecimal getAdjustedPrice(Product product) {
+        BigDecimal basePrice = product.getPrice();
+        if (basePrice == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal globalPercent = getLatestGlobalAdjustment();
+        if (globalPercent == null) {
+            globalPercent = BigDecimal.ZERO;
+        }
+
+        Long categoryId = product.getCategory() != null ? product.getCategory().getId() : null;
+        BigDecimal categoryPercent = BigDecimal.ZERO;
+        if (categoryId != null) {
+            categoryPercent = getCategoryPercent(categoryId).percent();
+            if (categoryPercent == null) {
+                categoryPercent = BigDecimal.ZERO;
+            }
+        }
+
+        // ex: global 10 + categoria 5 = 15 -> fator = 1.15
+        BigDecimal totalPercent = globalPercent.add(categoryPercent);
+        BigDecimal factor = BigDecimal.ONE.add(
+                totalPercent.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)
+        );
+
+        return basePrice.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    }
+
 }
