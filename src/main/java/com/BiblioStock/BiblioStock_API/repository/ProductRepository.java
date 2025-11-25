@@ -34,11 +34,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(value = "SELECT product_id, product_name, category_name, min_qty, stock_qty, deficit FROM vw_products_below_minimum", nativeQuery = true)
     List<Object[]> findProductsBellowMinimum();
 
-    @Query("SELECT DISTINCT p FROM Product p " +
-       "JOIN FETCH p.authors a " +
+   @Query("SELECT DISTINCT p FROM Product p " +
+       "JOIN p.authors fa " +                 
+       "LEFT JOIN FETCH p.authors a " +       
        "LEFT JOIN FETCH p.category " +
-       "WHERE a.id = :authorId")
+       "WHERE fa.id = :authorId")
 List<Product> findByAuthorId(@Param("authorId") Long authorId);
+
 
 
 }

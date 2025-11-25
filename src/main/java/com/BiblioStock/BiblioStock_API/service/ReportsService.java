@@ -63,6 +63,7 @@ public class ReportsService {
         return products.stream()
                 .map(ProductResponseDTO::fromEntity)
                 .collect(Collectors.toList());
+    }
     public List<ProductsBellowMinimumResponseDTO> getProductsBellowMinimum(){
         List<Object[]> results = productRepository.findProductsBellowMinimum();
         List<ProductsBellowMinimumResponseDTO> responseList = new ArrayList<>();
