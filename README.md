@@ -29,7 +29,7 @@ API para gerenciamento completo de estoque de livraria, incluindo produtos, cate
 ---
 ## 🚀 Front-end
 
-https://github.com/GreyPompom/biblioStock-Client
+- [BiblioStock-Client](https://github.com/GreyPompom/biblioStock-Client)
 
 ---
 
